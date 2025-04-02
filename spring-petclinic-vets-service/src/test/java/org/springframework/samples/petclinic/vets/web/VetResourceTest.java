@@ -59,4 +59,31 @@ class VetResourceTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].id").value(1));
     }
+
+    @Test
+    void shouldReturnNotFoundForInvalidEndpoint() throws Exception {
+    // When & Then
+        mvc.perform(get("/invalid-endpoint").accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldReturnBadRequestForInvalidHttpMethod() throws Exception {
+        // When & Then
+        mvc.perform(get("/vets").contentType(MediaType.TEXT_PLAIN))
+            .andExpect(status().isBadRequest());
+    }
+   
+    @Test
+    void shouldReturnEmptyListWhenNoVetsExist()  throws Exception {
+    // Given // Given
+    given(vetRepository.findAll()).willReturn(asList());
+
+    // When & Then
+    mvc.perform(get("/vets").accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())        
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$")
+        .isEmpty());
+    }
 }

@@ -17,14 +17,14 @@ pipeline {
         echo 'testing the application...'
       }
     }
-
-    stage("deploy") {
-      steps {
-        echo 'deploying the application...'
-        echo 'Deploying automation Deploy-staging'
-      }
-    }
-  
   }
 
+  post {
+    success {
+      githubNotify context: 'Jenkins', status: 'SUCCESS', description: 'Build passed'
+    }
+    failure {
+      githubNotify context: 'Jenkins', status: 'FAILURE', description: 'Build failed'
+    }
+  }
 }

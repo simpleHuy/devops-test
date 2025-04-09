@@ -2,18 +2,17 @@ pipeline {
   
   agent any
   stages {
-    when {
-      changeRequest() // only runs on PRs
+    stage("test") {
+      when {
+        changeRequest()
+      }
+      steps {
+        echo 'testing the application...'
+      }
     }
     stage("build") {
       steps {
         echo 'building the appliation...'
-      }
-    }
-
-    stage("test") {
-      steps {
-        echo 'testing the application...'
       }
     }
   }

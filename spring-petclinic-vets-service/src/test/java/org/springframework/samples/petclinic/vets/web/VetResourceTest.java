@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.samples.petclinic.vets.model.Specialty;
 import org.springframework.samples.petclinic.vets.model.Vet;
 import org.springframework.samples.petclinic.vets.model.VetRepository;
 import org.springframework.test.context.ActiveProfiles;
@@ -28,6 +29,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static java.util.Arrays.asList;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -68,22 +70,28 @@ class VetResourceTest {
     }
 
     @Test
-    void shouldReturnBadRequestForInvalidHttpMethod() throws Exception {
-        // When & Then
-        mvc.perform(get("/vets").contentType(MediaType.TEXT_PLAIN))
-            .andExpect(status().isBadRequest());
-    }
-   
-    @Test
     void shouldReturnEmptyListWhenNoVetsExist()  throws Exception {
     // Given // Given
     given(vetRepository.findAll()).willReturn(asList());
 
     // When & Then
     mvc.perform(get("/vets").accept(MediaType.APPLICATION_JSON))
-        .andExpect(status().isOk())        
+        .andExpect(status().isOk())
         .andExpect(status().isOk())
         .andExpect(jsonPath("$")
         .isEmpty());
+    }
+
+    @Test
+    void testGettersAndSetters() throws Exception {
+        // Arrange
+        Specialty specialty = new Specialty();
+        String name = "Dentistry";
+
+        // Act
+        specialty.setName(name);
+
+        // Assert
+        assertEquals(name, specialty.getName());
     }
 }

@@ -1,7 +1,6 @@
 pipeline {
   
   agent any
-  triggers { }
   stages {
     when {
       changeRequest() // only runs on PRs

@@ -1,9 +1,11 @@
 pipeline {
   
   agent any
-  
+  triggers { }
   stages {
-  
+    when {
+      changeRequest() // only runs on PRs
+    }
     stage("build") {
       steps {
         echo 'building the appliation...'

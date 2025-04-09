@@ -55,7 +55,7 @@ pipeline {
             }
         }
 
-        stage('Build, Test, and Coverage') {
+        stage('Test & Coverage') {
             when {
                 expression {
                     return env.CHANGED_SERVICES != null && env.CHANGED_SERVICES.trim()
@@ -65,15 +65,12 @@ pipeline {
                 script {
                     def services = env.CHANGED_SERVICES.split(',')
                     for (svc in services) {
-                        echo "🔧 Building and testing: ${svc}"
+                        echo "🧪 Testing: ${svc}"
 
-                        // Run tests and generate coverage
                         sh "./mvnw -pl ${svc} -am clean verify jacoco:report"
 
-                        // Upload test results
                         junit "**/${svc}/target/surefire-reports/*.xml"
 
-                        // Upload JaCoCo HTML report
                         publishHTML(target: [
                             reportName           : "JaCoCo - ${svc}",
                             reportDir            : "${svc}/target/site/jacoco",
@@ -82,6 +79,23 @@ pipeline {
                             keepAll              : true,
                             alwaysLinkToLastBuild: true
                         ])
+                    }
+                }
+            }
+        }
+
+        stage('Build') {
+            when {
+                expression {
+                    return env.CHANGED_SERVICES != null && env.CHANGED_SERVICES.trim()
+                }
+            }
+            steps {
+                script {
+                    def services = env.CHANGED_SERVICES.split(',')
+                    for (svc in services) {
+                        echo "🏗️ Building (no tests): ${svc}"
+                        sh "./mvnw -pl ${svc} -am package -DskipTests"
                     }
                 }
             }

@@ -31,7 +31,7 @@ pipeline {
                         returnStdout: true
                     ).trim().split("\n")
 
-                    echo "Changed files:\n${changedFiles.join('\n')}"
+                    echo "🔍 Changed files:\n${changedFiles.join('\n')}"
 
                     def changedServices = []
                     for (service in SERVICES.trim().split()) {
@@ -46,7 +46,7 @@ pipeline {
                     if (changedServices.isEmpty()) {
                         echo "✅ No service changes detected. Skipping build."
                         currentBuild.result = 'SUCCESS'
-                        skipRemainingStages = true
+                        return
                     } else {
                         echo "📦 Changed services: ${changedServices}"
                         env.CHANGED_SERVICES = changedServices.join(',')
@@ -57,7 +57,9 @@ pipeline {
 
         stage('Build, Test, and Coverage') {
             when {
-                expression { return !env.skipRemainingStages }
+                expression {
+                    return env.CHANGED_SERVICES != null && env.CHANGED_SERVICES.trim()
+                }
             }
             steps {
                 script {

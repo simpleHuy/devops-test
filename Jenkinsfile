@@ -76,14 +76,18 @@ pipeline {
                         // Parse coverage report (e.g., jacoco.xml)
                         def coverageFile = "${svc}/target/site/jacoco/jacoco.xml"
                         if (fileExists(coverageFile)) {
-                            def report = readXml file: coverageFile
+                            def coverageXml = readFile(coverageFile)
 
-                            // Extract line coverage percentage
-                            def lineCoverage = (report.counter.find { it.@type == 'LINE' }?.@covered.toDouble() /
-                                                report.counter.find { it.@type == 'LINE' }?.@missed.toDouble() +
-                                                report.counter.find { it.@type == 'LINE' }?.@covered.toDouble()) * 100
-
-                            echo "📈 ${svc} Line Coverage: ${String.format('%.2f', lineCoverage)}%"
+                            def lineCoveredMatch = (coverageXml =~ /counter type="LINE".*?covered="(\d+)"/)
+                            def lineMissedMatch = (coverageXml =~ /counter type="LINE".*?missed="(\d+)"/)
+                            
+                            if (lineCoveredMatch.find() && lineMissedMatch.find()) {
+                                def lineCovered = lineCoveredMatch[0][1].toDouble()
+                                def lineMissed = lineMissedMatch[0][1].toDouble()
+                                def lineCoverage = (lineCovered / (lineCovered + lineMissed)) * 100
+                                
+                                echo "📊 ${svc} Line Coverage: ${String.format('%.2f', lineCoverage)}%"
+                                
 
                             // Enforce coverage threshold
                             if (lineCoverage < COVERAGE_THRESHOLD.toDouble()) {

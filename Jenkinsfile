@@ -98,12 +98,12 @@ pipeline {
                         }
 
                         // Upload coverage to Codecov
-                        sh """
+                        sh '''
                             bash <(curl -s https://codecov.io/bash) \
-                            -t ${CODECOV_TOKEN} \
-                            -F ${svc} \
-                            -s ${svc}/target
-                        """
+                            -t $CODECOV_TOKEN \
+                            -F $svc \
+                            -s $svc/target
+                        '''
                     }
                 }
             }

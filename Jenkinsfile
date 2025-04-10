@@ -12,6 +12,8 @@ pipeline {
             spring-petclinic-vets-service
             spring-petclinic-visits-service
         """
+        CODECOV_TOKEN = credentials('codecov_token') // Add your Codecov token in Jenkins credentials
+        COVERAGE_THRESHOLD = 80 // Set your desired minimum coverage percentage
     }
 
     stages {
@@ -67,38 +69,41 @@ pipeline {
                     for (svc in services) {
                         echo "🧪 Testing: ${svc}"
 
-                        sh "./mvnw -pl ${svc} -am clean verify jacoco:report"
+                        sh "./mvnw -pl ${svc} -am clean verify"
 
                         junit "**/${svc}/target/surefire-reports/*.xml"
 
-                        publishHTML(target: [
-                            reportName           : "JaCoCo - ${svc}",
-                            reportDir            : "${svc}/target/site/jacoco",
-                            reportFiles          : 'index.html',
-                            allowMissing         : true,
-                            keepAll              : true,
-                            alwaysLinkToLastBuild: true
-                        ])
+                        // Parse coverage report (e.g., jacoco.xml)
+                        def coverageFile = "${svc}/target/site/jacoco/jacoco.xml"
+                        if (fileExists(coverageFile)) {
+                            def coverageXml = readFile(coverageFile)
+                            def parser = new XmlParser()
+                            def report = parser.parseText(coverageXml)
 
-                        // 📊 Check JaCoCo line coverage >= 70%
-                        def xmlPath = "${svc}/target/site/jacoco/jacoco.xml"
-                        def coverageXml = readFile(xmlPath)
-                        def parser = new XmlParser()
-                        def report = parser.parseText(coverageXml)
-                        def lineCounter = report.counter.find { it.@type == 'LINE' }
-                        def covered = lineCounter.@covered.toInteger()
-                        def missed = lineCounter.@missed.toInteger()
-                        def total = covered + missed
-                        def lineCoverage = (covered * 100.0 / total)
+                            // Extract line coverage percentage
+                            def lineCoverage = (report.counter.find { it.@type == 'LINE' }?.@covered.toDouble() /
+                                                report.counter.find { it.@type == 'LINE' }?.@missed.toDouble() +
+                                                report.counter.find { it.@type == 'LINE' }?.@covered.toDouble()) * 100
 
-                        echo "📈 ${svc} Line Coverage: ${String.format('%.2f', lineCoverage)}%"
+                            echo "📈 ${svc} Line Coverage: ${String.format('%.2f', lineCoverage)}%"
 
-                        def coverageThreshold = 0.0
-                        if (lineCoverage < coverageThreshold) {
-                            error("❌ Coverage check failed for ${svc}: ${String.format('%.2f', lineCoverage)}% < 70%")
+                            // Enforce coverage threshold
+                            if (lineCoverage < COVERAGE_THRESHOLD.toDouble()) {
+                                error("❌ Coverage check failed for ${svc}: ${String.format('%.2f', lineCoverage)}% < ${COVERAGE_THRESHOLD}%")
+                            } else {
+                                echo "✅ Coverage check passed for ${svc}"
+                            }
                         } else {
-                            echo "✅ Coverage check passed for ${svc}"
+                            echo "⚠️ Coverage file not found for ${svc}. Skipping coverage check."
                         }
+
+                        // Upload coverage to Codecov
+                        sh """
+                            bash <(curl -s https://codecov.io/bash) \
+                            -t ${CODECOV_TOKEN} \
+                            -F ${svc} \
+                            -s ${svc}/target
+                        """
                     }
                 }
             }

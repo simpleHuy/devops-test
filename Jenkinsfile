@@ -77,14 +77,28 @@ pipeline {
                         def coverageFile = "${svc}/target/site/jacoco/jacoco.xml"
                         if (fileExists(coverageFile)) {
                             def coverageXml = readFile(coverageFile)
-
-                            def lineCoveredMatch = (coverageXml =~ /counter type="LINE".*?covered="(\d+)"/)
-                            def lineMissedMatch = (coverageXml =~ /counter type="LINE".*?missed="(\d+)"/)
                             
-                            if (lineCoveredMatch.find() && lineMissedMatch.find()) {
-                                def lineCovered = lineCoveredMatch[0][1].toDouble()
-                                def lineMissed = lineMissedMatch[0][1].toDouble()
-                                def lineCoverage = (lineCovered / (lineCovered + lineMissed)) * 100
+                            // Extract all LINE counter elements
+                            def lineCoveredMatches = (coverageXml =~ /counter type="LINE".*?covered="(\d+)"/)
+                            def lineMissedMatches = (coverageXml =~ /counter type="LINE".*?missed="(\d+)"/)
+                            
+                            // Check if we have matches
+                            if (lineCoveredMatches.count > 0 && lineMissedMatches.count > 0) {
+                                // Sum up all covered and missed lines
+                                def totalCovered = 0
+                                def totalMissed = 0
+                                
+                                // Process all matches
+                                for (int i = 0; i < lineCoveredMatches.count; i++) {
+                                    totalCovered += lineCoveredMatches[i][1].toDouble()
+                                }
+                                
+                                for (int i = 0; i < lineMissedMatches.count; i++) {
+                                    totalMissed += lineMissedMatches[i][1].toDouble()
+                                }
+                                
+                                // Calculate coverage percentage
+                                def lineCoverage = (totalCovered / (totalCovered + totalMissed)) * 100
                                 
                                 echo "📊 ${svc} Line Coverage: ${String.format('%.2f', lineCoverage)}%"
                                 // Enforce coverage threshold
@@ -93,8 +107,7 @@ pipeline {
                                 } else {
                                     echo "✅ Coverage check passed for ${svc}"
                                 }
-                            }
-                            else {
+                            } else {
                                 error("❌ Coverage data not found in ${coverageFile}")
                             }
 

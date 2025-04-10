@@ -87,14 +87,17 @@ pipeline {
                                 def lineCoverage = (lineCovered / (lineCovered + lineMissed)) * 100
                                 
                                 echo "📊 ${svc} Line Coverage: ${String.format('%.2f', lineCoverage)}%"
-                                
-
-                            // Enforce coverage threshold
-                            if (lineCoverage < COVERAGE_THRESHOLD.toDouble()) {
-                                error("❌ Coverage check failed for ${svc}: ${String.format('%.2f', lineCoverage)}% < ${COVERAGE_THRESHOLD}%")
-                            } else {
-                                echo "✅ Coverage check passed for ${svc}"
+                                // Enforce coverage threshold
+                                if (lineCoverage < COVERAGE_THRESHOLD.toDouble()) {
+                                    error("❌ Coverage check failed for ${svc}: ${String.format('%.2f', lineCoverage)}% < ${COVERAGE_THRESHOLD}%")
+                                } else {
+                                    echo "✅ Coverage check passed for ${svc}"
+                                }
                             }
+                            else {
+                                error("❌ Coverage data not found in ${coverageFile}")
+                            }
+
                         } else {
                             echo "⚠️ Coverage file not found for ${svc}. Skipping coverage check."
                         }

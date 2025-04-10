@@ -76,9 +76,7 @@ pipeline {
                         // Parse coverage report (e.g., jacoco.xml)
                         def coverageFile = "${svc}/target/site/jacoco/jacoco.xml"
                         if (fileExists(coverageFile)) {
-                            def coverageXml = readFile(coverageFile)
-                            def parser = new XmlParser()
-                            def report = parser.parseText(coverageXml)
+                            def report = readXml file: coverageFile
 
                             // Extract line coverage percentage
                             def lineCoverage = (report.counter.find { it.@type == 'LINE' }?.@covered.toDouble() /

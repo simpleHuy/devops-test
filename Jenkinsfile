@@ -13,7 +13,7 @@ pipeline {
             spring-petclinic-visits-service
         """
         CODECOV_TOKEN = credentials('codecov_token')
-        COVERAGE_THRESHOLD = 0
+        COVERAGE_THRESHOLD = 70
     }
 
     stages {

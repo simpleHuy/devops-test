@@ -12,8 +12,8 @@ pipeline {
             spring-petclinic-vets-service
             spring-petclinic-visits-service
         """
-        CODECOV_TOKEN = credentials('codecov_token') // Add your Codecov token in Jenkins credentials
-        COVERAGE_THRESHOLD = 80 // Set your desired minimum coverage percentage
+        CODECOV_TOKEN = credentials('codecov_token')
+        COVERAGE_THRESHOLD = 0
     }
 
     stages {

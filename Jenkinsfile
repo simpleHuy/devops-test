@@ -26,10 +26,10 @@ pipeline {
         stage('Detect Changed Services') {
             steps {
                 script {
-                    sh 'git fetch origin main'
+                    sh 'git fetch origin main:refs/remotes/origin/main'
 
                     def changedFiles = sh(
-                        script: "git diff --name-only origin/main...HEAD",
+                        script: "git diff --name-only origin/main HEAD",
                         returnStdout: true
                     ).trim().split("\n")
 

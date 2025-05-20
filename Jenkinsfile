@@ -117,17 +117,19 @@ pipeline {
     }
 
     post {
-        away{
-            sh """
+        success {
+            echo "Pipeline completed successfully!"
+            sh"""
                 docker logout
                 echo "Logged out from Docker Hub"
             """
         }
-        success {
-            echo "Pipeline completed successfully!"
-        }
         failure {
             echo "Pipeline failed!"
+            sh"""
+                docker logout
+                echo "Logged out from Docker Hub"
+            """
         }
     }
 }

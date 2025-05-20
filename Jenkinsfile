@@ -12,7 +12,7 @@ pipeline {
     }
     
     environment {
-        DOCKER_HUB_CREDS = credentials('dockerhub credentials')
+        DOCKER_HUB_CREDS = credentials('rVFUdFHuKL')
         COMMIT_ID = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
         REPOSITORY_PREFIX = "scider/devops"
     }
@@ -119,17 +119,9 @@ pipeline {
     post {
         success {
             echo "Pipeline completed successfully!"
-            sh"""
-                docker logout
-                echo "Logged out from Docker Hub"
-            """
         }
         failure {
             echo "Pipeline failed!"
-            sh"""
-                docker logout
-                echo "Logged out from Docker Hub"
-            """
         }
     }
 }

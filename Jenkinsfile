@@ -18,8 +18,10 @@ pipeline {
     }
     
     stages {
+
         stage('Test Docker') {
             steps {
+                sh'echo "Testing Docker installation..."'
                 sh 'docker --version'
                 sh 'docker info'
             }

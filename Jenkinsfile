@@ -18,17 +18,6 @@ pipeline {
     }
     
     stages {
-        stage('Preparation') {
-            steps {
-                script {
-                    // Set up Docker credentials
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_HUB_CREDS) {
-                        echo "Docker credentials set up successfully."
-                    }
-                }
-            }
-        }
-        
         stage('Initialize') {
             steps {
                 script {

@@ -12,12 +12,21 @@ pipeline {
     }
     
     environment {
-        DOCKER_HUB_CREDS = credentials('dockerhub credentials')
+        //DOCKER_HUB_CREDS = credentials('dockerhub credentials')
         COMMIT_ID = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
         REPOSITORY_PREFIX = "scider/devops"
     }
     
     stages {
+
+        stage('Test Docker') {
+            steps {
+                sh'echo "Testing Docker installation..."'
+                sh 'docker --version'
+                sh 'docker info'
+            }
+        }
+
         stage('Initialize') {
             steps {
                 script {

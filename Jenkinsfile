@@ -12,7 +12,7 @@ pipeline {
     }
     
     environment {
-        DOCKER_HUB_CREDS = credentials('dockerhub-credentials')
+        //DOCKER_HUB_CREDS = credentials('dockerhub-credentials')
         COMMIT_ID = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
         REPOSITORY_PREFIX = "scider/devops"
     }

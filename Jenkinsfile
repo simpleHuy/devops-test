@@ -91,9 +91,38 @@ pipeline {
                 }
             }
         }
+
+        stage('Push Images') {
+            steps {
+                script {
+                    // Login to Docker Hub
+                    sh """
+                        echo "${DOCKER_HUB_CREDS_PSW}" | docker login -u "${DOCKER_HUB_CREDS_USR}" --password-stdin
+                        echo "Logged in to Docker Hub"
+                    """
+                    
+                    services.each { service, branch ->
+                        echo "Pushing Docker image for ${service} on branch ${branch}"
+                        
+                        // Push the images
+                        sh """
+                            docker push ${REPOSITORY_PREFIX}/${service}:${COMMIT_ID}
+                            docker push ${REPOSITORY_PREFIX}/${service}:${branch}-${COMMIT_ID}
+                            echo "Pushed ${service} with ${COMMIT_ID} and ${branch}-${COMMIT_ID}"
+                        """
+                    }
+                }
+            }
+        }
     }
 
     post {
+        away{
+            sh """
+                docker logout
+                echo "Logged out from Docker Hub"
+            """
+        }
         success {
             echo "Pipeline completed successfully!"
         }

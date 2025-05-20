@@ -18,15 +18,17 @@ pipeline {
     }
     
     stages {
-
-        stage('Test Docker') {
+        stage('Preparation') {
             steps {
-                sh'echo "Testing Docker installation..."'
-                sh 'docker --version'
-                sh 'docker info'
+                script {
+                    // Set up Docker credentials
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_HUB_CREDS) {
+                        echo "Docker credentials set up successfully."
+                    }
+                }
             }
         }
-
+        
         stage('Initialize') {
             steps {
                 script {

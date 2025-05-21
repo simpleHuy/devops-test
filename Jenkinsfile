@@ -12,7 +12,7 @@ pipeline {
     }
     
     environment {
-        DOCKER_HUB_CREDS = credentials('rVFUdFHuKL')
+        DOCKER_HUB_CREDS = credentials('dockerhub')
         COMMIT_ID = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
         REPOSITORY_PREFIX = "${DOCKER_HUB_CREDS_USR}"
     }

@@ -7,6 +7,7 @@ pipeline {
         string(name: 'config-server', defaultValue: 'main', description: 'Branch to build for config-server')
         string(name: 'customer-service', defaultValue: 'main', description: 'Branch to build for customer-service')
         string(name: 'discovery-server', defaultValue: 'main', description: 'Branch to build for discovery-server')
+        string(name: 'genai-service', defaultValue: 'main', description: 'Branch to build for generic-service')
         string(name: 'vets-service', defaultValue: 'main', description: 'Branch to build for vets-service')
         string(name: 'visit-service', defaultValue: 'main', description: 'Branch to build for visit-service')
     }
@@ -38,6 +39,7 @@ pipeline {
                         'spring-petclinic-config-server': params['config-server'],
                         'spring-petclinic-customers-service': params['customer-service'],
                         'spring-petclinic-discovery-server': params['discovery-server'],
+                        'spring-petclinic-genai-service': params['genai-service'],
                         'spring-petclinic-vets-service': params['vets-service'],
                         'spring-petclinic-visits-service': params['visit-service']
                     ]

@@ -76,10 +76,15 @@ pipeline {
                         """
                         
                         // Tag the image
+                        if (branch == 'main') {
+                            tag = "latest"
+                        }
+                        else {
+                            tag = "${COMMIT_ID}"
+                        }
                         sh """
-                            docker tag ${REPOSITORY_PREFIX}/${service} ${REPOSITORY_PREFIX}/${service}:${COMMIT_ID}
-                            docker tag ${REPOSITORY_PREFIX}/${service} ${REPOSITORY_PREFIX}/${service}:${branch}-${COMMIT_ID}
-                            echo "Tagged ${service} with ${COMMIT_ID} and ${branch}-${COMMIT_ID}"
+                            docker tag ${REPOSITORY_PREFIX}/${service} ${REPOSITORY_PREFIX}/${service}:${tag}
+                            echo "Tagged ${service} with ${tag}"
                         """
 
                         // Check if the image was built successfully

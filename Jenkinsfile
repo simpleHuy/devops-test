@@ -14,7 +14,7 @@ pipeline {
     environment {
         DOCKER_HUB_CREDS = credentials('rVFUdFHuKL')
         COMMIT_ID = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-        REPOSITORY_PREFIX = "sciderus/devops"
+        REPOSITORY_PREFIX = "${DOCKER_HUB_CREDS_USR}/devops"
     }
     
     stages {

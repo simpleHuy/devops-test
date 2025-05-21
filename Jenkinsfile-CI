@@ -1,0 +1,73 @@
+pipeline {
+    agent any
+
+    environment {
+        REPO_URL = 'https://github.com/simpleHuy/devops-test'
+        REPOSITORY_PREFIX = 'sciderus'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Get Commit ID') {
+            steps {
+                script {
+                    env.COMMIT_ID = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    env.IMAGE_TAG = env.COMMIT_ID
+                    echo "Commit ID: ${env.IMAGE_TAG}"
+                }
+            }
+        }
+
+        stage('Build & Push All Services') {
+            steps {
+                script {
+                    def services = [
+                        'spring-petclinic-admin-server',
+                        'spring-petclinic-api-gateway',
+                        'spring-petclinic-config-server',
+                        'spring-petclinic-customers-service',
+                        'spring-petclinic-discovery-server',
+                        'spring-petclinic-genai-service',
+                        'spring-petclinic-vets-service',
+                        'spring-petclinic-visits-service'
+                    ]
+
+                    withCredentials([usernamePassword(
+                        credentialsId: 'dockerhub',
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )]) {
+                        sh "echo \"$DOCKER_PASSWORD\" | docker login -u \"$DOCKER_USERNAME\" --password-stdin"
+
+                        for (service in services) {
+                            echo "Building Docker image for ${service} on branch ${env.BRANCH_NAME ?: env.GIT_BRANCH}"
+
+                            dir("${service}") {
+                                sh "../mvnw clean install -P buildDocker -Ddocker.image.prefix=${REPOSITORY_PREFIX} -DskipTests"
+                            }
+
+                            sh """
+                                docker tag ${REPOSITORY_PREFIX}/${service} ${REPOSITORY_PREFIX}/${service}:${env.IMAGE_TAG}
+                                docker push ${REPOSITORY_PREFIX}/${service}:${env.IMAGE_TAG}
+                            """
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Build & push completed for ${env.IMAGE_TAG}"
+        }
+        failure {
+            echo "❌ Build failed."
+        }
+    }
+}

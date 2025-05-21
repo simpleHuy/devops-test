@@ -16,6 +16,8 @@ pipeline {
         DOCKER_HUB_CREDS = credentials('dockerhub')
         REPOSITORY_PREFIX = "${DOCKER_HUB_CREDS_USR}"
     }
+
+    stages {
         stage('Initialize') {
             steps {
                 script {

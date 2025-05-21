@@ -76,19 +76,13 @@ pipeline {
                         """
                         
                         // Tag the image
-                        if (branch == 'main') {
-                            tag = "latest"
-                        }
-                        else {
-                            tag = "${COMMIT_ID}"
-                        }
                         sh """
                             docker tag ${REPOSITORY_PREFIX}/${service} ${REPOSITORY_PREFIX}/${service}:${tag}
                             echo "Tagged ${service} with ${tag}"
                         """
 
                         // Check if the image was built successfully
-                        def imageExists = sh(script: "docker images -q ${REPOSITORY_PREFIX}/${service}:${COMMIT_ID}", returnStatus: true) == 0
+                        def imageExists = sh(script: "docker images -q ${REPOSITORY_PREFIX}/${service}:${tag}", returnStatus: true) == 0
                         if (!imageExists) {
                             error "Docker image for ${service} was not built successfully."
                         } else {
@@ -109,13 +103,18 @@ pipeline {
                     """
                     
                     services.each { service, branch ->
+                        if (branch == 'main') {
+                            tag = "latest"
+                        }
+                        else {
+                            tag = "${COMMIT_ID}"
+                        }
                         echo "Pushing Docker image for ${service} on branch ${branch}"
                         
                         // Push the images
                         sh """
-                            docker push ${REPOSITORY_PREFIX}/${service}:${COMMIT_ID}
-                            docker push ${REPOSITORY_PREFIX}/${service}:${branch}-${COMMIT_ID}
-                            echo "Pushed ${service} with ${COMMIT_ID} and ${branch}-${COMMIT_ID}"
+                            docker push ${REPOSITORY_PREFIX}/${service}:${tag}
+                            echo "Pushed ${service} with tag ${tag}"
                         """
                     }
                 }

@@ -59,8 +59,8 @@ pipeline {
                                 "NAMESPACE=${env.NAMESPACE}"
                             ]) {
                                 sh """
-                                envsubst < deployment.tpl.yaml > ${SERVICE_NAME}-deployment.yaml
-                                envsubst < service.tpl.yaml > ${SERVICE_NAME}-service.yaml
+                                envsubst < k8s/deployment.tpl.yaml > ${SERVICE_NAME}-deployment.yaml
+                                envsubst < k8s/service.tpl.yaml > ${SERVICE_NAME}-service.yaml
 
                                 kubectl apply -f ${SERVICE_NAME}-deployment.yaml -n ${NAMESPACE}
                                 kubectl apply -f ${SERVICE_NAME}-service.yaml -n ${NAMESPACE}

@@ -47,28 +47,25 @@ pipeline {
                         services.each { svc ->
                             echo "Deploying service: ${svc.name} on branch ${svc.branch}"
 
-                            def imageTag = svc.branch == 'main'
-                                ? 'latest'
-                                : sh(script: "git rev-parse HEAD", returnStdout: true).trim()
+                            def SERVICE_NAME = svc.name
+                            def BRANCH = svc.branch
+                            def IMAGE_TAG = BRANCH
+                            def CONTAINER_PORT = guessPortFromServiceName(SERVICE_NAME)
 
-                            def deployYaml = readFile 'k8s/deployment.tpl.yaml'
-                                .replace('{{SERVICE_NAME}}', svc.name)
-                                .replace('{{IMAGE_TAG}}', imageTag)
-                                .replace('${CONTAINER_PORT}', '8080')  // You can use dynamic containerPorts if needed
-                                .replace('metadata:', 'metadata:\n  namespace: dev-review')
+                            withEnv([
+                                "SERVICE_NAME=${SERVICE_NAME}",
+                                "IMAGE_TAG=${IMAGE_TAG}",
+                                "CONTAINER_PORT=${CONTAINER_PORT}",
+                                "NAMESPACE=${env.NAMESPACE}"
+                            ]) {
+                                sh """
+                                envsubst < deployment.tpl.yaml > ${SERVICE_NAME}-deployment.yaml
+                                envsubst < service.tpl.yaml > ${SERVICE_NAME}-service.yaml
 
-                            def serviceYaml = readFile 'k8s/service.tpl.yaml'
-                                .replace('{{SERVICE_NAME}}', svc.name)
-                                .replace('{{NODE_PORT}}', nodePorts[svc.name].toString())
-                                .replace('metadata:', 'metadata:\n  namespace: dev-review')
-
-                            writeFile file: "${svc.name}-deployment.yaml", text: deployYaml
-                            writeFile file: "${svc.name}-service.yaml", text: serviceYaml
-
-                            sh """
-                                kubectl apply -f ${svc.name}-deployment.yaml -n dev-review
-                                kubectl apply -f ${svc.name}-service.yaml -n dev-review
-                            """
+                                kubectl apply -f ${SERVICE_NAME}-deployment.yaml -n ${NAMESPACE}
+                                kubectl apply -f ${SERVICE_NAME}-service.yaml -n ${NAMESPACE}
+                                """
+                            }
                         }
                     }
                 }
@@ -101,4 +98,15 @@ pipeline {
             }
         }
     }
+}
+
+def guessPortFromServiceName(name) {
+    if (name.contains("admin")) return "9090"
+    if (name.contains("gateway")) return "8080"
+    if (name.contains("vets")) return "8081"
+    if (name.contains("visits")) return "8082"
+    if (name.contains("customers")) return "8083"
+    if (name.contains("config")) return "8888"
+    if (name.contains("discovery")) return "8761"
+    return "8080" // default fallback
 }

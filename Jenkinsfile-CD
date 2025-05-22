@@ -98,13 +98,14 @@ pipeline {
                         ]
 
                         services.each { svc ->
+                            def svcName = svc.name
                             def nodePort = sh(
-                                script: "kubectl get svc ${svc} -n ${namespace} -o jsonpath='{.spec.ports[0].nodePort}'",
+                                script: "kubectl get svc ${svcName} -n ${namespace} -o jsonpath='{.spec.ports[0].nodePort}'",
                                 returnStdout: true
                             ).trim()
 
-                            echo "${svc} is accessible at: http://${workerIP}:${nodePort}"
-                            echo "→ Add to /etc/hosts: ${workerIP}    ${svc}.local"
+                            echo "${svcName} is accessible at: http://${workerIP}:${nodePort}"
+                            echo "→ Add to /etc/hosts: ${workerIP}    ${svcName}.local"
                         }
                     }
                 }       

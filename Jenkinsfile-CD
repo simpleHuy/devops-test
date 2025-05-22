@@ -21,7 +21,7 @@ pipeline {
             steps {
                 script {
                     def minikubeStatus = sh(
-                        script: "minikube status | grep 'host:' | awk '{print $5}'",
+                        script: "minikube status | grep 'host:' | awk '{print \$5}'",
                         returnStdout: true
                     ).trim()
 

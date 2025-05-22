@@ -16,6 +16,16 @@ pipeline {
         string(name: 'discovery-server', defaultValue: 'main', description: 'Branch for discovery server')
     }
 
+    def services = [
+        [name: "spring-petclinic-admin-server",     branch: params['admin-server']],
+        [name: "spring-petclinic-api-gateway",      branch: params['api-gateway']],
+        [name: "spring-petclinic-vets-service",     branch: params['vets-service']],
+        [name: "spring-petclinic-visits-service",   branch: params['visits-service']],
+        [name: "spring-petclinic-customers-service",branch: params['owners-service']],
+        [name: "spring-petclinic-config-server",    branch: params['config-server']],
+        [name: "spring-petclinic-discovery-server", branch: params['discovery-server']]
+    ]
+
     stages {
         stage('test minikube') {
             steps {
@@ -34,15 +44,6 @@ pipeline {
                     script {
                         env.KUBECONFIG = "${KUBECONFIG_FILE}"
 
-                        def services = [
-                            [name: "spring-petclinic-admin-server",     branch: params['admin-server']],
-                            [name: "spring-petclinic-api-gateway",      branch: params['api-gateway']],
-                            [name: "spring-petclinic-vets-service",     branch: params['vets-service']],
-                            [name: "spring-petclinic-visits-service",   branch: params['visits-service']],
-                            [name: "spring-petclinic-customers-service",branch: params['owners-service']],
-                            [name: "spring-petclinic-config-server",    branch: params['config-server']],
-                            [name: "spring-petclinic-discovery-server", branch: params['discovery-server']]
-                        ]
                         sh "kubectl get ns dev-review || kubectl create ns dev-review"
 
                         services.each { svc ->

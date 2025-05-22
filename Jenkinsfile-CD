@@ -3,72 +3,72 @@ pipeline {
 
     environment {
         DOCKER_REGISTRY = "sciderus"
-        KUBECONFIG = 
+        // KUBECONFIG is injected dynamically, not set here
+    }
+
+    parameters {
+        string(name: 'admin-server', defaultValue: 'main', description: 'Branch for admin server')
+        string(name: 'api-gateway', defaultValue: 'main', description: 'Branch for API gateway')
+        string(name: 'vets-service', defaultValue: 'main', description: 'Branch for vets service')
+        string(name: 'visits-service', defaultValue: 'main', description: 'Branch for visits service')
+        string(name: 'owners-service', defaultValue: 'main', description: 'Branch for owners/customers service')
+        string(name: 'config-server', defaultValue: 'main', description: 'Branch for config server')
+        string(name: 'discovery-server', defaultValue: 'main', description: 'Branch for discovery server')
     }
 
     stages {
-        stage('Configure kubeconfig') {
+        stage('Generate and Apply Kubernetes YAMLs') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     script {
                         env.KUBECONFIG = "${KUBECONFIG_FILE}"
+
+                        def services = [
+                            [name: "spring-petclinic-admin-server",     branch: params['admin-server']],
+                            [name: "spring-petclinic-api-gateway",      branch: params['api-gateway']],
+                            [name: "spring-petclinic-vets-service",     branch: params['vets-service']],
+                            [name: "spring-petclinic-visits-service",   branch: params['visits-service']],
+                            [name: "spring-petclinic-customers-service",branch: params['owners-service']],
+                            [name: "spring-petclinic-config-server",    branch: params['config-server']],
+                            [name: "spring-petclinic-discovery-server", branch: params['discovery-server']]
+                        ]
+
+                        def nodePorts = [
+                            "spring-petclinic-vets-service": 30001,
+                            "spring-petclinic-visits-service": 30002,
+                            "spring-petclinic-customers-service": 30003,
+                            "spring-petclinic-api-gateway": 30000,
+                            "spring-petclinic-config-server": 30004,
+                            "spring-petclinic-discovery-server": 30005,
+                            "spring-petclinic-admin-server": 30006
+                        ]
+
                         sh "kubectl get ns dev-review || kubectl create ns dev-review"
-                    }
-                }
-            }
-        }
-        
-        stage('Generate and Apply Kubernetes YAMLs') {
-            steps {
-                script {
-                    def services = [
-                        [name: "spring-petclinic-admin-server",     branch: params['admin-server']],
-                        [name: "spring-petclinic-api-gateway",      branch: params['api-gateway']],
-                        [name: "spring-petclinic-vets-service",     branch: params['vets-service']],
-                        [name: "spring-petclinic-visits-service",   branch: params['visits-service']],
-                        [name: "spring-petclinic-customers-service",branch: params['owners-service']],
-                        [name: "spring-petclinic-config-server",    branch: params['config-server']],
-                        [name: "spring-petclinic-discovery-server", branch: params['discovery-server']],
-                    ]
 
+                        services.each { svc ->
+                            def imageTag = svc.branch == 'main'
+                                ? 'latest'
+                                : sh(script: "git rev-parse HEAD", returnStdout: true).trim()
 
-                    def nodePorts = [
-                        "vets-service": 30001,
-                        "visits-service": 30002,
-                        "owners-service": 30003,
-                        "spring-petclinic-api-gateway": 30000,
-                        "spring-petclinic-config-server": 30004,
-                        "spring-petclinic-discovery-server": 30005,
-                        "spring-petclinic-admin-server": 30006
-                    ]
+                            def deployYaml = readFile 'deployment.tpl.yaml'
+                                .replace('{{SERVICE_NAME}}', svc.name)
+                                .replace('{{IMAGE_TAG}}', imageTag)
+                                .replace('${CONTAINER_PORT}', '8080')  // You can use dynamic containerPorts if needed
+                                .replace('metadata:', 'metadata:\n  namespace: dev-review')
 
-                    // Ensure namespace exists
-                    sh "kubectl get ns dev-review || kubectl create ns dev-review"
+                            def serviceYaml = readFile 'service.tpl.yaml'
+                                .replace('{{SERVICE_NAME}}', svc.name)
+                                .replace('{{NODE_PORT}}', nodePorts[svc.name].toString())
+                                .replace('metadata:', 'metadata:\n  namespace: dev-review')
 
-                    // Generate and apply YAMLs
-                    services.each { svc ->
-                        def imageTag = svc.branch == 'main'
-                            ? 'latest'
-                            : sh(script: "git rev-parse HEAD", returnStdout: true).trim()
+                            writeFile file: "${svc.name}-deployment.yaml", text: deployYaml
+                            writeFile file: "${svc.name}-service.yaml", text: serviceYaml
 
-                        def deployYaml = readFile 'deployment.tpl.yaml'
-                            .replace('{{SERVICE_NAME}}', svc.name)
-                            .replace('{{IMAGE_TAG}}', imageTag)
-                            .replace('${CONTAINER_PORT}', '8080')
-                            .replace('metadata:', 'metadata:\n  namespace: dev-review')
-
-                        def serviceYaml = readFile 'service.tpl.yaml'
-                            .replace('{{SERVICE_NAME}}', svc.name)
-                            .replace('{{NODE_PORT}}', nodePorts[svc.name].toString())
-                            .replace('metadata:', 'metadata:\n  namespace: dev-review')
-
-                        writeFile file: "${svc.name}-deployment.yaml", text: deployYaml
-                        writeFile file: "${svc.name}-service.yaml", text: serviceYaml
-
-                        sh """
-                            kubectl apply -f ${svc.name}-deployment.yaml -n dev-review
-                            kubectl apply -f ${svc.name}-service.yaml -n dev-review
-                        """
+                            sh """
+                                kubectl apply -f ${svc.name}-deployment.yaml -n dev-review
+                                kubectl apply -f ${svc.name}-service.yaml -n dev-review
+                            """
+                        }
                     }
                 }
             }
@@ -83,9 +83,9 @@ pipeline {
                     ).trim()
 
                     def nodePorts = [
-                        "vets-service": 30001,
-                        "visits-service": 30002,
-                        "owners-service": 30003,
+                        "spring-petclinic-vets-service": 30001,
+                        "spring-petclinic-visits-service": 30002,
+                        "spring-petclinic-customers-service": 30003,
                         "spring-petclinic-api-gateway": 30000,
                         "spring-petclinic-config-server": 30004,
                         "spring-petclinic-discovery-server": 30005,
@@ -94,7 +94,7 @@ pipeline {
 
                     nodePorts.each { svc, port ->
                         echo "${svc} is accessible at: http://${workerIP}:${port}"
-                        echo "Add to /etc/hosts: ${workerIP}    ${svc}.local"
+                        echo "→ Add to /etc/hosts: ${workerIP}    ${svc}.local"
                     }
                 }
             }

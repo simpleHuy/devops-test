@@ -46,7 +46,6 @@ pipeline {
                         sh "kubectl get ns dev-review || kubectl create ns dev-review"
 
                         services.each { svc ->
-                            echo "Deploying service: ${svc.name} on branch ${svc.branch}"
 
                             def SERVICE_NAME = svc.name
                             def CONTAINER_NAME = SERVICE_NAME.replaceFirst("spring-petclinic-", "")
@@ -60,6 +59,8 @@ pipeline {
                                 IMAGE_TAG = commitId.take(7)
                             }
                             def CONTAINER_PORT = guessPortFromServiceName(SERVICE_NAME)
+                            echo "Deploying service: ${svc.name} on branch ${svc.branch}"
+                            echo "tag: ${IMAGE_TAG}" 
 
                             withEnv([
                                 "SERVICE_NAME=${SERVICE_NAME}",

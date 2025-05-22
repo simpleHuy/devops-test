@@ -45,11 +45,11 @@ pipeline {
                         sh "kubectl get ns dev-review || kubectl create ns dev-review"
 
                         services.each { svc ->
+                            echo "Deploying service: ${svc.name} on branch ${svc.branch}"
+
                             def imageTag = svc.branch == 'main'
                                 ? 'latest'
                                 : sh(script: "git rev-parse HEAD", returnStdout: true).trim()
-
-                            sh "echo ${imageTag}"
 
                             def deployYaml = readFile 'k8s/deployment.tpl.yaml'
                                 .replace('{{SERVICE_NAME}}', svc.name)

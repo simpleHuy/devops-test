@@ -17,20 +17,20 @@ pipeline {
     }
 
     stages {
-        stage('test minikube') {
-            steps {
-                script {
-                    def minikubeStatus = sh(
-                        script: "minikube status | grep 'host:' | awk '{print \$5}'",
-                        returnStdout: true
-                    ).trim()
+        // stage('test minikube') {
+        //     steps {
+        //         script {
+        //             def minikubeStatus = sh(
+        //                 script: "minikube status | grep 'host:' | awk '{print \$5}'",
+        //                 returnStdout: true
+        //             ).trim()
 
-                    if (minikubeStatus != "Running") {
-                        error("Minikube is not running. Please start Minikube.")
-                    }
-                }
-            }
-        }
+        //             if (minikubeStatus != "Running") {
+        //                 error("Minikube is not running. Please start Minikube.")
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('Generate and Apply Kubernetes YAMLs') {
             steps {

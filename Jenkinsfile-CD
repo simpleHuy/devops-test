@@ -6,16 +6,6 @@ pipeline {
         NAMESPACE = "dev-review"
     }
 
-    parameters {
-        string(name: 'admin-server', defaultValue: 'main', description: 'Branch for admin server')
-        string(name: 'api-gateway', defaultValue: 'main', description: 'Branch for API gateway')
-        string(name: 'vets-service', defaultValue: 'main', description: 'Branch for vets service')
-        string(name: 'visits-service', defaultValue: 'main', description: 'Branch for visits service')
-        string(name: 'owners-service', defaultValue: 'main', description: 'Branch for owners/customers service')
-        string(name: 'config-server', defaultValue: 'main', description: 'Branch for config server')
-        string(name: 'discovery-server', defaultValue: 'main', description: 'Branch for discovery server')
-    }
-
     stages {
         stage('test minikube') {
             steps {
@@ -39,7 +29,8 @@ pipeline {
                             [name: "spring-petclinic-api-gateway",      branch: params['api-gateway']],
                             [name: "spring-petclinic-vets-service",     branch: params['vets-service']],
                             [name: "spring-petclinic-visits-service",   branch: params['visits-service']],
-                            [name: "spring-petclinic-customers-service",branch: params['owners-service']],
+                            [name: "spring-petclinic-customers-service",branch: params['customer-service']],
+                            [name: "spring-petclinic-genai-service",    branch: params['genai-service']],
                             [name: "spring-petclinic-config-server",    branch: params['config-server']],
                             [name: "spring-petclinic-discovery-server", branch: params['discovery-server']]
                         ]
@@ -96,7 +87,8 @@ pipeline {
                             [name: "api-gateway",      branch: params['api-gateway']],
                             [name: "vets-service",     branch: params['vets-service']],
                             [name: "visits-service",   branch: params['visits-service']],
-                            [name: "customers-service",branch: params['owners-service']],
+                            [name: "customers-service",branch: params['customer-service']],
+                            [name: "genai-service",    branch: params['genai-service']],
                             [name: "config-server",    branch: params['config-server']],
                             [name: "discovery-server", branch: params['discovery-server']]
                         ]
@@ -124,6 +116,7 @@ def guessPortFromServiceName(name) {
     if (name.contains("vets")) return "8081"
     if (name.contains("visits")) return "8082"
     if (name.contains("customers")) return "8083"
+    if (name.contains("genai")) return "8084"
     if (name.contains("config")) return "8888"
     if (name.contains("discovery")) return "8761"
     return "8080" // default fallback

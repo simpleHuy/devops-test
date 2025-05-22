@@ -61,7 +61,10 @@ pipeline {
 
                             def SERVICE_NAME = svc.name
                             def BRANCH = svc.branch
-                            def IMAGE_TAG = BRANCH
+                            def IMAGE_TAG = 'latest'
+                            if(BRANCH != 'main'){
+                                IMAGE_TAG = 'something-else'
+                            }
                             def CONTAINER_PORT = guessPortFromServiceName(SERVICE_NAME)
 
                             withEnv([

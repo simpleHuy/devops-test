@@ -1,0 +1,87 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = "sciderus"
+    }
+
+    stages {
+        stage('Generate and Apply Kubernetes YAMLs') {
+            steps {
+                script {
+                    def services = [
+                        [name: "spring-petclinic-admin-server",     branch: params['admin-server']],
+                        [name: "spring-petclinic-api-gateway",      branch: params['api-gateway']],
+                        [name: "spring-petclinic-vets-service",     branch: params['vets-service']],
+                        [name: "spring-petclinic-visits-service",   branch: params['visits-service']],
+                        [name: "spring-petclinic-customers-service",branch: params['owners-service']],
+                        [name: "spring-petclinic-config-server",    branch: params['config-server']],
+                        [name: "spring-petclinic-discovery-server", branch: params['discovery-server']],
+                    ]
+
+
+                    def nodePorts = [
+                        "vets-service": 30001,
+                        "visits-service": 30002,
+                        "owners-service": 30003,
+                        "spring-petclinic-api-gateway": 30000,
+                        "spring-petclinic-config-server": 30004,
+                        "spring-petclinic-discovery-server": 30005,
+                        "spring-petclinic-admin-server": 30006
+                    ]
+
+                    // Ensure namespace exists
+                    sh "kubectl get ns dev-review || kubectl create ns dev-review"
+
+                    // Generate and apply YAMLs
+                    services.each { svc ->
+                        def deployYaml = readFile 'deployment.tpl.yaml'
+                            .replace('{{SERVICE_NAME}}', svc.name)
+                            .replace('{{IMAGE_TAG}}', svc.branch)
+                            .replace('${CONTAINER_PORT}', '8080')
+                            .replace('metadata:', 'metadata:\n  namespace: dev-review')
+
+                        def serviceYaml = readFile 'service.tpl.yaml'
+                            .replace('{{SERVICE_NAME}}', svc.name)
+                            .replace('{{NODE_PORT}}', nodePorts[svc.name].toString())
+                            .replace('metadata:', 'metadata:\n  namespace: dev-review')
+
+                        writeFile file: "${svc.name}-deployment.yaml", text: deployYaml
+                        writeFile file: "${svc.name}-service.yaml", text: serviceYaml
+
+                        sh """
+                            kubectl apply -f ${svc.name}-deployment.yaml -n dev-review
+                            kubectl apply -f ${svc.name}-service.yaml -n dev-review
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Show Access Info') {
+            steps {
+                script {
+                    def workerIP = sh(
+                        script: "kubectl get nodes -o jsonpath='{.items[0].status.addresses[0].address}'",
+                        returnStdout: true
+                    ).trim()
+
+                    def nodePorts = [
+                        "vets-service": 30001,
+                        "visits-service": 30002,
+                        "owners-service": 30003,
+                        "spring-petclinic-api-gateway": 30000,
+                        "spring-petclinic-config-server": 30004,
+                        "spring-petclinic-discovery-server": 30005,
+                        "spring-petclinic-admin-server": 30006
+                    ]
+
+                    nodePorts.each { svc, port ->
+                        echo "${svc} is accessible at: http://${workerIP}:${port}"
+                        echo "Add to /etc/hosts: ${workerIP}    ${svc}.local"
+                    }
+                }
+            }
+        }
+    }
+}

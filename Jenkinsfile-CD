@@ -86,7 +86,7 @@ pipeline {
 
         stage('Show Access Info') {
             steps {
-                withCredentials([file(credentialsId: 'kubeconfig-credential-id', variable: 'KUBECONFIG')]) {
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
                     script {
                         def workerIP = sh(
                             script: "kubectl get nodes -o jsonpath='{.items[0].status.addresses[0].address}'",

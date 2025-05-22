@@ -60,7 +60,7 @@ pipeline {
                             echo "Deploying service: ${svc.name} on branch ${svc.branch}"
 
                             def SERVICE_NAME = svc.name
-                            def CONTAINER_NAME = SERVICE_NAME - "spring-petclinic-"
+                            def CONTAINER_NAME = SERVICE_NAME.replaceFirst("spring-petclinic-", "")
                             def BRANCH = svc.branch
                             def IMAGE_TAG = 'latest'
                             if(BRANCH != 'main'){

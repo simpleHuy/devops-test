@@ -35,9 +35,13 @@ pipeline {
 
                     // Generate and apply YAMLs
                     services.each { svc ->
+                        def imageTag = svc.branch == 'main'
+                            ? 'latest'
+                            : sh(script: "git rev-parse HEAD", returnStdout: true).trim()
+
                         def deployYaml = readFile 'deployment.tpl.yaml'
                             .replace('{{SERVICE_NAME}}', svc.name)
-                            .replace('{{IMAGE_TAG}}', svc.branch)
+                            .replace('{{IMAGE_TAG}}', imageTag)
                             .replace('${CONTAINER_PORT}', '8080')
                             .replace('metadata:', 'metadata:\n  namespace: dev-review')
 

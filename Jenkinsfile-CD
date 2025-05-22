@@ -86,27 +86,29 @@ pipeline {
 
         stage('Show Access Info') {
             steps {
-                script {
-                    def workerIP = sh(
-                        script: "kubectl get nodes -o jsonpath='{.items[0].status.addresses[0].address}'",
-                        returnStdout: true
-                    ).trim()
+                withCredentials([file(credentialsId: 'kubeconfig-credential-id', variable: 'KUBECONFIG')]) {
+                    script {
+                        def workerIP = sh(
+                            script: "kubectl get nodes -o jsonpath='{.items[0].status.addresses[0].address}'",
+                            returnStdout: true
+                        ).trim()
 
-                    def nodePorts = [
-                        "spring-petclinic-vets-service": 30001,
-                        "spring-petclinic-visits-service": 30002,
-                        "spring-petclinic-customers-service": 30003,
-                        "spring-petclinic-api-gateway": 30000,
-                        "spring-petclinic-config-server": 30004,
-                        "spring-petclinic-discovery-server": 30005,
-                        "spring-petclinic-admin-server": 30006
-                    ]
+                        def nodePorts = [
+                            "spring-petclinic-vets-service": 30001,
+                            "spring-petclinic-visits-service": 30002,
+                            "spring-petclinic-customers-service": 30003,
+                            "spring-petclinic-api-gateway": 30000,
+                            "spring-petclinic-config-server": 30004,
+                            "spring-petclinic-discovery-server": 30005,
+                            "spring-petclinic-admin-server": 30006
+                        ]
 
-                    nodePorts.each { svc, port ->
-                        echo "${svc} is accessible at: http://${workerIP}:${port}"
-                        echo "→ Add to /etc/hosts: ${workerIP}    ${svc}.local"
+                        nodePorts.each { svc, port ->
+                            echo "${svc} is accessible at: http://${workerIP}:${port}"
+                            echo "→ Add to /etc/hosts: ${workerIP}    ${svc}.local"
+                        }
                     }
-                }
+                }       
             }
         }
     }

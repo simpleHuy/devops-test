@@ -35,23 +35,23 @@ pipeline {
                         env.KUBECONFIG = "${KUBECONFIG_FILE}"
 
                         def services = [
-                            [name: "admin-server",     branch: params['admin-server']],
-                            [name: "api-gateway",      branch: params['api-gateway']],
-                            [name: "vets-service",     branch: params['vets-service']],
-                            [name: "visits-service",   branch: params['visits-service']],
-                            [name: "customers-service",branch: params['owners-service']],
-                            [name: "config-server",    branch: params['config-server']],
-                            [name: "discovery-server", branch: params['discovery-server']]
+                            [name: "spring-petclinic-admin-server",     branch: params['admin-server']],
+                            [name: "spring-petclinic-api-gateway",      branch: params['api-gateway']],
+                            [name: "spring-petclinic-vets-service",     branch: params['vets-service']],
+                            [name: "spring-petclinic-visits-service",   branch: params['visits-service']],
+                            [name: "spring-petclinic-customers-service",branch: params['owners-service']],
+                            [name: "spring-petclinic-config-server",    branch: params['config-server']],
+                            [name: "spring-petclinic-discovery-server", branch: params['discovery-server']]
                         ]
 
                         def nodePorts = [
-                            "vets-service": 30001,
-                            "visits-service": 30002,
-                            "customers-service": 30003,
-                            "api-gateway": 30000,
-                            "config-server": 30004,
-                            "discovery-server": 30005,
-                            "admin-server": 30006
+                            "spring-petclinic-vets-service": 30001,
+                            "spring-petclinic-visits-service": 30002,
+                            "spring-petclinic-customers-service": 30003,
+                            "spring-petclinic-api-gateway": 30000,
+                            "spring-petclinic-config-server": 30004,
+                            "spring-petclinic-discovery-server": 30005,
+                            "spring-petclinic-admin-server": 30006
                         ]
 
                         sh "kubectl get ns dev-review || kubectl create ns dev-review"
@@ -60,15 +60,17 @@ pipeline {
                             echo "Deploying service: ${svc.name} on branch ${svc.branch}"
 
                             def SERVICE_NAME = svc.name
+                            def CONTAINER_NAME = SERVICE_NAME - "spring-petclinic-"
                             def BRANCH = svc.branch
                             def IMAGE_TAG = 'latest'
-                            // if(BRANCH != 'main'){
-                            //     IMAGE_TAG = 'something-else'
-                            // }
+                            if(BRANCH != 'main'){
+                                IMAGE_TAG = 'something-else'
+                            }
                             def CONTAINER_PORT = guessPortFromServiceName(SERVICE_NAME)
 
                             withEnv([
                                 "SERVICE_NAME=${SERVICE_NAME}",
+                                "CONTAINER_NAME=${CONTAINER_NAME}",
                                 "IMAGE_TAG=${IMAGE_TAG}",
                                 "CONTAINER_PORT=${CONTAINER_PORT}",
                                 "NAMESPACE=${env.NAMESPACE}"
@@ -97,13 +99,13 @@ pipeline {
                         ).trim()
 
                         def nodePorts = [
-                            "vets-service": 30001,
-                            "visits-service": 30002,
-                            "customers-service": 30003,
-                            "api-gateway": 30000,
-                            "config-server": 30004,
-                            "discovery-server": 30005,
-                            "admin-server": 30006
+                            "spring-petclinic-vets-service": 30001,
+                            "spring-petclinic-visits-service": 30002,
+                            "spring-petclinic-customers-service": 30003,
+                            "spring-petclinic-api-gateway": 30000,
+                            "spring-petclinic-config-server": 30004,
+                            "spring-petclinic-discovery-server": 30005,
+                            "spring-petclinic-admin-server": 30006
                         ]
 
                         nodePorts.each { svc, port ->

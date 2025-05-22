@@ -13,7 +13,7 @@ spec:
         app: ${SERVICE_NAME}
     spec:
       containers:
-        - name: ${SERVICE_NAME}
+        - name: ${CONTAINER_NAME}
           image: sciderus/${SERVICE_NAME}:${IMAGE_TAG}
           ports:
             - containerPort: ${CONTAINER_PORT}

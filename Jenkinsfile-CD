@@ -17,6 +17,17 @@ pipeline {
     }
 
     stages {
+        stage('Check k8s'){
+            steps{
+                WithCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
+                    script {
+                        env.KUBECONFIG = "${KUBECONFIG_FILE}"
+                        sh "kubectl get nodes"
+                    }
+                }
+            }
+        }
+
         stage('Generate and Apply Kubernetes YAMLs') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {

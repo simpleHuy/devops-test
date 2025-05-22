@@ -17,20 +17,16 @@ pipeline {
     }
 
     stages {
-        // stage('test minikube') {
-        //     steps {
-        //         script {
-        //             def minikubeStatus = sh(
-        //                 script: "minikube status | grep 'host:' | awk '{print \$5}'",
-        //                 returnStdout: true
-        //             ).trim()
-
-        //             if (minikubeStatus != "Running") {
-        //                 error("Minikube is not running. Please start Minikube.")
-        //             }
-        //         }
-        //     }
-        // }
+        stage('test minikube') {
+            steps {
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
+                    script {
+                        env.KUBECONFIG = "${KUBECONFIG_FILE}"
+                        sh "kubectl get nodes"
+                    }
+                }
+            }
+        }
 
         stage('Generate and Apply Kubernetes YAMLs') {
             steps {

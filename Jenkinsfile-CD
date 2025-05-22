@@ -3,9 +3,21 @@ pipeline {
 
     environment {
         DOCKER_REGISTRY = "sciderus"
+        KUBECONFIG = 
     }
 
     stages {
+        stage('Configure kubeconfig') {
+            steps {
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
+                    script {
+                        env.KUBECONFIG = "${KUBECONFIG_FILE}"
+                        sh "kubectl get ns dev-review || kubectl create ns dev-review"
+                    }
+                }
+            }
+        }
+        
         stage('Generate and Apply Kubernetes YAMLs') {
             steps {
                 script {

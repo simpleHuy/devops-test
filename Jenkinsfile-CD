@@ -50,6 +50,11 @@ pipeline {
                             def SERVICE_NAME = svc.name
                             def CONTAINER_NAME = SERVICE_NAME.replaceFirst("spring-petclinic-", "")
                             def BRANCH = svc.branch
+                            def commitId = sh(
+                                script: "git rev-parse origin/${BRANCH}",
+                                returnStdout: true
+                            ).trim()
+
                             def IMAGE_TAG = (BRANCH != 'main') ? commitId.take(7) : 'latest'
                             def CONTAINER_PORT = guessPortFromServiceName(SERVICE_NAME)
                             

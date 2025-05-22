@@ -17,6 +17,21 @@ pipeline {
     }
 
     stages {
+        stage('test minikube') {
+            steps {
+                script {
+                    def minikubeStatus = sh(
+                        script: "minikube status | grep 'host:' | awk '{print $2}'",
+                        returnStdout: true
+                    ).trim()
+
+                    if (minikubeStatus != "Running") {
+                        error("Minikube is not running. Please start Minikube.")
+                    }
+                }
+            }
+        }
+
         stage('Generate and Apply Kubernetes YAMLs') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {

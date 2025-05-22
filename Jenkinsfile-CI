@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        REPO_URL = 'https://github.com/simpleHuy/devops-test'
         REPOSITORY_PREFIX = 'sciderus'
     }
 
@@ -23,9 +22,14 @@ pipeline {
             }
         }
 
-        stage('Build & Push All Services') {
+        stage('Detect Changed Services') {
             steps {
                 script {
+                    def diffFiles = sh(
+                        script: "git diff --name-only origin/main...HEAD",
+                        returnStdout: true
+                    ).trim().split('\n')
+
                     def services = [
                         'spring-petclinic-admin-server',
                         'spring-petclinic-api-gateway',
@@ -37,6 +41,30 @@ pipeline {
                         'spring-petclinic-visits-service'
                     ]
 
+                    def changedServices = services.findAll { service ->
+                        diffFiles.any { file -> file.startsWith(service + "/") }
+                    }
+
+                    if (changedServices.isEmpty()) {
+                        echo "No service changes detected."
+                        currentBuild.result = 'SUCCESS'
+                        return
+                    }
+
+                    env.CHANGED_SERVICES = changedServices.join(',')
+                    echo "Changed services: ${env.CHANGED_SERVICES}"
+                }
+            }
+        }
+
+        stage('Build & Push Changed Services') {
+            when {
+                expression { return env.CHANGED_SERVICES }
+            }
+            steps {
+                script {
+                    def changedServices = env.CHANGED_SERVICES.split(',')
+
                     withCredentials([usernamePassword(
                         credentialsId: 'dockerhub',
                         usernameVariable: 'DOCKER_USERNAME',
@@ -44,7 +72,7 @@ pipeline {
                     )]) {
                         sh "echo \"$DOCKER_PASSWORD\" | docker login -u \"$DOCKER_USERNAME\" --password-stdin"
 
-                        for (service in services) {
+                        for (service in changedServices) {
                             echo "Building Docker image for ${service} on branch ${env.BRANCH_NAME ?: env.GIT_BRANCH}"
 
                             dir("${service}") {
@@ -64,10 +92,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Build & push completed for ${env.IMAGE_TAG}"
+            echo "Build & push completed for ${env.IMAGE_TAG}"
         }
         failure {
-            echo "❌ Build failed."
+            echo "Build failed."
         }
     }
 }

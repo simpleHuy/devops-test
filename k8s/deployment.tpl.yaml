@@ -21,8 +21,8 @@ spec:
             - name: SPRING_BOOT_ADMIN_CLIENT_INSTANCE_PREFER_IP
               value: "false"
             - name: SPRING_BOOT_ADMIN_CLIENT_INSTANCE_SERVICE_HOST
-              value: "{{ .name }}"
+              value: ${CONTAINER_NAME}
             - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
               value: "false"
             - name: EUREKA_INSTANCE_HOSTNAME
-              value: "{{ .name }}"
+              value: ${CONTAINER_NAME}

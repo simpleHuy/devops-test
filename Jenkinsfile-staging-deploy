@@ -74,6 +74,9 @@ pipeline {
     }
 
     stage('Tag GitOps Repo') {
+      when {
+        expression { return env.VERSION != null && env.VERSION != '' }
+      }
       steps {
         script {
           if (!VERSION) {

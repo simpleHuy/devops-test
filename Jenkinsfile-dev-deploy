@@ -17,7 +17,7 @@ pipeline {
     stage('Checkout GitOps Repo') {
       steps {
         dir('gitops-config') {
-          git url: 'https://github.com/simpleHuy/spring-petclinic-infra', branch: 'main'
+          git url: 'https://github.com/simpleHuy/spring-petclinic-infra', branch: 'master'
         }
       }
     }

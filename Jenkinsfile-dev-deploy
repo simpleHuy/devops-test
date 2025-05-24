@@ -14,28 +14,6 @@ pipeline {
       }
     }
 
-    stage('Build & Push Docker Images') {
-      steps {
-        script {
-          // Dùng tag cố định “latest”
-          def version = 'latest'
-          // Danh sách service như trong values.yaml
-          def services = [
-            'admin-server','api-gateway','config-server',
-            'customers-service','discovery-server','genai-service',
-            'vets-service','visits-service'
-          ]
-          for (svc in services) {
-            sh """
-              echo \$DOCKERHUB_CREDENTIALS_USR | docker login -u \$DOCKERHUB_CREDENTIALS_USR --password-stdin
-              docker build -t sciderus/${svc}:${version} ./templates/../${svc}
-              docker push sciderus/${svc}:${version}
-            """
-          }
-        }
-      }
-    }
-
     stage('Sync Argo CD') {
       when {
         expression { fileExists('argocd-dev.yaml') }

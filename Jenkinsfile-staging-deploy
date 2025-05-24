@@ -8,6 +8,24 @@ pipeline {
     REPOSITORY_PREFIX = 'your-dockerhub-username' // Thay bằng prefix đúng của bạn
   }
 
+  stage('Check branch or tag') {
+      steps {
+        script {
+          def branch = env.BRANCH_NAME ?: ''
+          def tag = env.GIT_TAG ?: ''
+
+          echo "Branch: ${branch}"
+          echo "Tag: ${tag}"
+
+          if (!(branch.startsWith('rc_') || tag.startsWith('v'))) {
+            echo "Not an rc branch or v tag, skipping build."
+            currentBuild.result = 'SUCCESS'
+            return
+          }
+        }
+      }
+  }
+
   stages {
     stage('Checkout') {
       steps {

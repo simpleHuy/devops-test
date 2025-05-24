@@ -59,6 +59,9 @@ pipeline {
 
     stage('Build and Push Docker Images') {
       steps {
+        when {
+          expression { return env.CHANGED_SERVICES }
+        }
         script {
           def changedServices = env.CHANGED_SERVICES.split(',')
           withCredentials([usernamePassword(

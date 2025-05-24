@@ -27,7 +27,7 @@ pipeline {
           ]
           for (svc in services) {
             sh """
-              echo \"$DOCKERHUB_CCREDENTIALS_USR\" | docker login -u \"$DOCKERHUB_CREDENTIALS_USR\" --password-stdin
+              echo \"$DOCKERHUB_CREDENTIALS_USR\" | docker login -u \"$DOCKERHUB_CREDENTIALS_USR\" --password-stdin
               docker build -t sciderus/${svc}:${version} ./templates/../${svc}
               docker push sciderus/${svc}:${version}
             """

@@ -25,7 +25,7 @@ pipeline {
     stage('Sync Argo CD') {
       steps {
         sh """
-          argocd login \$ARGO_SERVER --username \$ARGO_CREDENTIALS_USR --password \$ARGO_CREDENTIALS_USR --insecure
+          argocd login \$ARGO_SERVER --username \$ARGO_CREDENTIALS_USR --password \$ARGO_CREDENTIALS_PSW --insecure
           argocd app sync petclinic-dev
         """
       }

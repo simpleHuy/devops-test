@@ -4,7 +4,7 @@ pipeline {
   environment {
     DOCKERHUB_CREDENTIALS = credentials('dockerhub')
     ARGO_CREDENTIALS = credentials('argocd')
-    ARGO_SERVER = 'argocd-server.argocd.svc.cluster.local:443'
+    ARGO_SERVER = 'argocd.devops'
   }
 
   stages {

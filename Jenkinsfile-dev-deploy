@@ -5,6 +5,7 @@ pipeline {
     DOCKERHUB_CREDENTIALS = credentials('dockerhub')
     ARGO_CREDENTIALS = credentials('argocd')
     ARGO_SERVER = 'argocd.devops'
+    REPOSITORY_PREFIX = 'sciderus'
   }
 
   stages {

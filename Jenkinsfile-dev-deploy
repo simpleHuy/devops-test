@@ -59,8 +59,9 @@ pipeline {
 
     stage('Build and Push Docker Images') {
       steps {
-        when {
-          expression { return env.CHANGED_SERVICES }
+        if (env.CHANGED_SERVICES.isEmpty()) {
+            currentBuild.result = 'SUCCESS'
+            return
         }
         script {
           def changedServices = env.CHANGED_SERVICES.split(',')

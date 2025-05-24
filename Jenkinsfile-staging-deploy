@@ -24,31 +24,43 @@ pipeline {
     }
 
     stage('Detect tag version') {
-      steps {
-        script {
-          // Lấy tag nếu có
-          TAG = sh(script: "git describe --tags --exact-match || echo ''", returnStdout: true).trim()
-          // Lấy branch hiện tại
-          BRANCH_NAME = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+        steps {
+            script {
+            TAG = sh(script: "git describe --tags --exact-match || echo ''", returnStdout: true).trim()
+            BRANCH_NAME = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
 
-          echo "Current branch: ${BRANCH_NAME}"
-          echo "Current tag: ${TAG}"
+            echo "Current branch: ${BRANCH_NAME}"
+            echo "Current tag: ${TAG}"
 
-          // Logic chọn tag/version cho docker image
-          if (TAG.matches(/^v\\d+\\.\\d+\\.\\d+$/)) {
-            VERSION = TAG
-          } else if (BRANCH_NAME.matches(/^rc_v\\d+\\.\\d+\\.\\d+$/)) {
-            VERSION = BRANCH_NAME.replace('rc_', '')
-          } else {
-            error("Neither a valid release tag nor RC branch detected. Stopping pipeline.")
-          }
+            def tagPattern = ~/^v\d+\.\d+\.\d+$/
+            def rcBranchPattern = ~/^rc_v\d+\.\d+\.\d+$/
 
-          echo "Using version: ${VERSION}"
+            if (TAG == '') {
+                echo "No git tag found on this commit. Skipping build."
+                currentBuild.result = 'SUCCESS'
+                // Dừng pipeline bằng cách thoát khỏi stage, hoặc set biến để skip tiếp
+                // return để dừng script ở đây, tiếp theo stages sẽ không chạy (nếu bạn thiết kế thêm điều kiện)
+                return
+            } else if (TAG ==~ tagPattern) {
+                VERSION = TAG
+            } else if (BRANCH_NAME ==~ rcBranchPattern) {
+                VERSION = BRANCH_NAME.replace('rc_', '')
+            } else {
+                echo "Neither a valid release tag nor RC branch detected. Skipping build."
+                currentBuild.result = 'SUCCESS'
+                return
+            }
+
+            echo "Using version: ${VERSION}"
+            }
         }
-      }
     }
 
+
     stage('Build and Push Docker Images') {
+        when {
+            expression { return env.VERSION != null && env.VERSION != '' }
+        }
       steps {
         script {
           def services = [
@@ -85,6 +97,9 @@ pipeline {
     }
 
     stage('Sync Argo CD') {
+        when {
+            expression { return env.VERSION != null && env.VERSION != '' }
+        }
       steps {
         withCredentials([usernamePassword(credentialsId: 'argocd', usernameVariable: 'ARGOCD_USER', passwordVariable: 'ARGOCD_PASS')]) {
           sh """

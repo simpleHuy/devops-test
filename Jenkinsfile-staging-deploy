@@ -34,14 +34,6 @@ pipeline {
       }
     }
 
-    stage('Checkout GitOps Repo') {
-      steps {
-        dir('gitops-config') { 
-          git url: 'https://github.com/simpleHuy/spring-petclinic-infra', branch: 'master'
-        }
-      }
-    }
-
     stage('Detect tag version') {
         steps {
             script {
@@ -57,8 +49,6 @@ pipeline {
             if (TAG == '') {
                 echo "No git tag found on this commit. Skipping build."
                 currentBuild.result = 'SUCCESS'
-                // Dừng pipeline bằng cách thoát khỏi stage, hoặc set biến để skip tiếp
-                // return để dừng script ở đây, tiếp theo stages sẽ không chạy (nếu bạn thiết kế thêm điều kiện)
                 return
             } else if (TAG ==~ tagPattern) {
                 VERSION = TAG
@@ -74,6 +64,45 @@ pipeline {
             }
         }
     }
+
+    stage('Checkout GitOps Repo') {
+      steps {
+        dir('helm-config') { 
+          git url: 'https://github.com/simpleHuy/spring-petclinic-infra', branch: 'master'
+        }
+      }
+    }
+
+    stage('Tag GitOps Repo') {
+      steps {
+        script {
+          if (!VERSION) {
+            echo "VERSION is not defined. Skipping tagging."
+            return
+          }
+
+          dir('helm-config') {
+            // Optional: cấu hình git user nếu repo chưa có user
+            sh '''
+              git config user.email "ci@yourcompany.com"
+              git config user.name "CI Pipeline"
+            '''
+
+            // Kiểm tra nếu tag đã tồn tại từ trước
+            def tagExists = sh(script: "git tag -l ${VERSION}", returnStdout: true).trim()
+            if (tagExists == VERSION) {
+              echo "Tag ${VERSION} đã tồn tại trong GitOps repo. Bỏ qua."
+            } else {
+              // Tạo và push tag
+              sh "git tag ${VERSION}"
+              sh "git push origin ${VERSION}"
+              echo "Tag ${VERSION} đã được gắn và đẩy lên GitOps repo."
+            }
+          }
+        }
+      }
+    }
+
 
 
     stage('Build and Push Docker Images') {

@@ -8,16 +8,15 @@ pipeline {
   }
 
   stages {
-    stage('Checkout') {
+    stage('Checkout GitOps Repo') {
       steps {
-        checkout scm
+        dir('gitops-config') {
+          git url: 'https://github.com/simpleHuy/spring-petclinic-infra', branch: 'main'
+        }
       }
     }
 
     stage('Sync Argo CD') {
-      when {
-        expression { fileExists('argocd-dev.yaml') }
-      }
       steps {
         sh """
           argocd login \$ARGO_SERVER --username \$ARGO_CREDENTIALS_USR --password \$ARGO_CREDENTIALS_USR --insecure

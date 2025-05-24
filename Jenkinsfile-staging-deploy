@@ -1,0 +1,98 @@
+pipeline {
+  agent any
+
+  environment {
+    DOCKERHUB_CREDENTIALS = credentials('dockerhub')
+    ARGO_CREDENTIALS = credentials('argocd')
+    ARGO_SERVER = 'argocd.devops'
+    REPOSITORY_PREFIX = 'your-dockerhub-username' // Thay bằng prefix đúng của bạn
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Checkout GitOps Repo') {
+      steps {
+        dir('gitops-config') { 
+          git url: 'https://github.com/simpleHuy/spring-petclinic-infra', branch: 'master'
+        }
+      }
+    }
+
+    stage('Detect tag version') {
+      steps {
+        script {
+          // Lấy tag nếu có
+          TAG = sh(script: "git describe --tags --exact-match || echo ''", returnStdout: true).trim()
+          // Lấy branch hiện tại
+          BRANCH_NAME = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+
+          echo "Current branch: ${BRANCH_NAME}"
+          echo "Current tag: ${TAG}"
+
+          // Logic chọn tag/version cho docker image
+          if (TAG.matches(/^v\\d+\\.\\d+\\.\\d+$/)) {
+            VERSION = TAG
+          } else if (BRANCH_NAME.matches(/^rc_v\\d+\\.\\d+\\.\\d+$/)) {
+            VERSION = BRANCH_NAME.replace('rc_', '')
+          } else {
+            error("Neither a valid release tag nor RC branch detected. Stopping pipeline.")
+          }
+
+          echo "Using version: ${VERSION}"
+        }
+      }
+    }
+
+    stage('Build and Push Docker Images') {
+      steps {
+        script {
+          def services = [
+            "spring-petclinic-admin-server",
+            "spring-petclinic-api-gateway",
+            "spring-petclinic-vets-service",
+            "spring-petclinic-visits-service",
+            "spring-petclinic-customers-service",
+            "spring-petclinic-genai-service",
+            "spring-petclinic-config-server",
+            "spring-petclinic-discovery-server"
+          ]
+
+          withCredentials([usernamePassword(
+            credentialsId: 'dockerhub',
+            usernameVariable: 'DOCKER_USERNAME',
+            passwordVariable: 'DOCKER_PASSWORD'
+          )]) {
+            sh "echo \"$DOCKER_PASSWORD\" | docker login -u \"$DOCKER_USERNAME\" --password-stdin"
+
+            for (service in services) {
+              dir(service) {
+                sh "../mvnw clean install -P buildDocker -Ddocker.image.prefix=${REPOSITORY_PREFIX} -DskipTests"
+              }
+
+              sh """
+                docker tag ${REPOSITORY_PREFIX}/${service}:latest ${REPOSITORY_PREFIX}/${service}:${VERSION}
+                docker push ${REPOSITORY_PREFIX}/${service}:${VERSION}
+              """
+            }
+          }
+        }
+      }
+    }
+
+    stage('Sync Argo CD') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'argocd', usernameVariable: 'ARGOCD_USER', passwordVariable: 'ARGOCD_PASS')]) {
+          sh """
+            argocd login ${ARGO_SERVER} --username ${ARGOCD_USER} --password ${ARGOCD_PASS} --insecure --grpc-web
+            argocd app sync devops-staging-test
+          """
+        }
+      }
+    }
+  }
+}

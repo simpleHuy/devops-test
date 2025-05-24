@@ -58,11 +58,10 @@ pipeline {
     }
 
     stage('Build and Push Docker Images') {
-      steps {
-        if (env.CHANGED_SERVICES.isEmpty()) {
-            currentBuild.result = 'SUCCESS'
-            return
+      when {
+          expression { return env.CHANGED_SERVICES }
         }
+      steps {
         script {
           def changedServices = env.CHANGED_SERVICES.split(',')
           withCredentials([usernamePassword(
@@ -90,6 +89,9 @@ pipeline {
     }
 
     stage('Sync Argo CD') {
+      when {
+          expression { return env.CHANGED_SERVICES }
+      }
       steps {
         sh """
           argocd login \$ARGO_SERVER --username \$ARGO_CREDENTIALS_USR --password \$ARGO_CREDENTIALS_PSW --insecure

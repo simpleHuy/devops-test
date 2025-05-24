@@ -26,7 +26,7 @@ pipeline {
       steps {
         sh """
           argocd login \$ARGO_SERVER --username \$ARGO_CREDENTIALS_USR --password \$ARGO_CREDENTIALS_PSW --insecure
-          argocd app sync petclinic-dev
+          argocd app sync devops-dev-test
         """
       }
     }

@@ -1,0 +1,51 @@
+pipeline {
+  agent any
+
+  environment {
+    DOCKERHUB_CREDENTIALS = credentials('dockerhub')
+    ARGO_CREDENTIALS = credentials('argocd')
+    ARGO_SERVER = 'argocd-server.argocd.svc.cluster.local:443'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Build & Push Docker Images') {
+      steps {
+        script {
+          // Dùng tag cố định “latest”
+          def version = 'latest'
+          // Danh sách service như trong values.yaml
+          def services = [
+            'admin-server','api-gateway','config-server',
+            'customers-service','discovery-server','genai-service',
+            'vets-service','visits-service'
+          ]
+          for (svc in services) {
+            sh """
+              docker login -u \$DOCKERHUB_CREDENTIALS_USR -p \$DOCKERHUB_CCREDENTIALS_USR
+              docker build -t sciderus/${svc}:${version} ./templates/../${svc}
+              docker push sciderus/${svc}:${version}
+            """
+          }
+        }
+      }
+    }
+
+    stage('Sync Argo CD') {
+      when {
+        expression { fileExists('argocd-dev.yaml') }
+      }
+      steps {
+        sh """
+          argocd login \$ARGO_SERVER --username \$ARGO_CREDENTIALS_USR --password \$ARGO_CREDENTIALS_USR --insecure
+          argocd app sync petclinic-dev
+        """
+      }
+    }
+  }
+}

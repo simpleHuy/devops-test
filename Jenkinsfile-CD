@@ -3,7 +3,8 @@ pipeline {
 
     environment {
         DOCKER_REGISTRY = "sciderus"
-        NAMESPACE = "dev-review"
+        NAMESPACE = params['prefix namespace'] + "-dev-review"
+        DOMAIN_NAME = "${params['prefix namespace']}.devops"
     }
 
     stages {
@@ -34,7 +35,7 @@ pipeline {
                             [name: "spring-petclinic-config-server",    branch: params['config-server']],
                             [name: "spring-petclinic-discovery-server", branch: params['discovery-server']]
                         ]
-                        sh "kubectl get ns dev-review || kubectl create ns dev-review"
+                        sh "kubectl get ns ${NAMESPACE} || kubectl create ns ${NAMESPACE}"
 
                         services.each { svc ->
 
@@ -82,6 +83,8 @@ pipeline {
                             returnStdout: true
                         ).trim()
 
+                         echo "Add to /etc/hosts: ${workerIP}    ${DOMAIN_NAME}"
+
                         def services = [
                             [name: "admin-server",     branch: params['admin-server']],
                             [name: "api-gateway",      branch: params['api-gateway']],
@@ -100,8 +103,7 @@ pipeline {
                                 returnStdout: true
                             ).trim()
 
-                            echo "${svcName} is accessible at: http://${workerIP}:${nodePort}"
-                            echo "→ Add to /etc/hosts: ${workerIP}    ${svcName}.local"
+                            echo "${svcName} is accessible at: http://${DOMAIN_NAME}:${nodePort}"
                         }
                     }
                 }       

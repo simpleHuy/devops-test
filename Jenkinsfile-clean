@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        NAMESPACE = "dev-review"
+        env.env.NAMESPACE = "dev-review"
     }
 
     options {
@@ -17,7 +17,7 @@ pipeline {
                         def userId = currentBuild.getBuildCauses()
                         .find { it._class.contains('UserIdCause') }?.userId ?: 'anonymous'
                         env.NAMESPACE = "${userId}-${NAMESPACE}"
-                        echo "Using namespace: ${NAMESPACE}"
+                        echo "Using namespace: ${env.NAMESPACE}"
                         sh '''
                             echo "Setting up kubeconfig..."
                             export KUBECONFIG=$KUBECONFIG_FILE
@@ -36,7 +36,7 @@ pipeline {
                         export KUBECONFIG=$KUBECONFIG_FILE
                         echo "Verifying access to Kubernetes cluster..."
                         kubectl cluster-info
-                        kubectl get ns $NAMESPACE
+                        kubectl get ns ${env.NAMESPACE}
                     '''
                 }
             }
@@ -47,8 +47,8 @@ pipeline {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
                         export KUBECONFIG=$KUBECONFIG_FILE
-                        echo "Deleting all in namespace $NAMESPACE..."
-                        kubectl delete all --all -n $NAMESPACE || echo "No thing found."
+                        echo "Deleting all in namespace ${env.NAMESPACE}..."
+                        kubectl delete all --all -n ${env.NAMESPACE} || echo "No thing found."
                     '''
                 }
             }
@@ -56,14 +56,14 @@ pipeline {
 
         stage('Cleanup Complete') {
             steps {
-                echo "Cleanup completed in namespace: ${NAMESPACE}"
+                echo "Cleanup completed in namespace: ${env.NAMESPACE}"
             }
         }
     }
 
     post {
         failure {
-            echo "An error occurred during cleanup in namespace: ${NAMESPACE}"
+            echo "An error occurred during cleanup in namespace: ${env.NAMESPACE}"
         }
     }
 }

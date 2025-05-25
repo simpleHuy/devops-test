@@ -115,9 +115,9 @@ pipeline {
 def guessPortFromServiceName(name) {
     if (name.contains("admin")) return "9090"
     if (name.contains("gateway")) return "8080"
-    if (name.contains("vets")) return "8081"
+    if (name.contains("vets")) return "8083"
     if (name.contains("visits")) return "8082"
-    if (name.contains("customers")) return "8083"
+    if (name.contains("customers")) return "8081"
     if (name.contains("genai")) return "8084"
     if (name.contains("config")) return "8888"
     if (name.contains("discovery")) return "8761"

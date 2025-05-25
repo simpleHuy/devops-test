@@ -22,11 +22,13 @@ pipeline {
                         '''
                     }
                 }
-
-                def userId = currentBuild.getBuildCauses()
-                .find { it._class.contains('UserIdCause') }?.userId ?: 'anonymous'
-                env.NAMESPACE = "${userId}-${NAMESPACE}"
-                echo "Using namespace: ${env.NAMESPACE}"
+                script {
+                    // Set the namespace based on the user who triggered the build
+                    def userId = currentBuild.getBuildCauses()
+                        .find { it._class.contains('UserIdCause') }?.userId ?: 'anonymous'
+                    env.NAMESPACE = "${userId}-${NAMESPACE}"
+                    echo "Using namespace: ${env.NAMESPACE}"
+                }
             }
         }
 

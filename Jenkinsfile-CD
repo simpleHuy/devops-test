@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         DOCKER_REGISTRY = "sciderus"
-        NAMESPACE = "${params['prefix namespace']}-dev-review"
-        DOMAIN_NAME = "${params['prefix namespace']}.devops"
+        NAMESPACE = "-dev-review"
+        DOMAIN_NAME = ".devops"
     }
 
     stages {
@@ -14,6 +14,12 @@ pipeline {
                     script {
                         env.KUBECONFIG = "${KUBECONFIG_FILE}"
                         sh "kubectl get nodes"
+
+                        def userId = currentBuild.getBuildCauses()
+                        .find { it._class.contains('UserIdCause') }?.userId ?: 'anonymous'
+                        echo "Triggered by: ${userId}"
+                        NAMESPACE = "${userId}-${NAMESPACE}"
+                        DOMAIN_NAME = "${userId}${DOMAIN_NAME}"
                     }
                 }
             }

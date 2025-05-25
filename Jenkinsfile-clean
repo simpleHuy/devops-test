@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        NAMESPACE = "dev-review"
+        NAMESPACE = "dev-review" // default, sẽ được ghi đè trong script
     }
 
     options {
@@ -10,24 +10,23 @@ pipeline {
     }
 
     stages {
-        stage('Initialize Kubeconfig') {
+        stage('Initialize Kubeconfig and Namespace') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
-                    script{
+                    script {
+                        // Lấy thông tin user trigger job
+                        def userId = currentBuild.getBuildCauses()
+                            .find { it._class.contains('UserIdCause') }?.userId ?: 'anonymous'
+                        // Gán lại namespace cho toàn pipeline
+                        env.NAMESPACE = "${userId}-dev-review"
+                        echo "✅ Using namespace: ${env.NAMESPACE}"
 
-                        sh '''
-                            echo "Setting up kubeconfig..."
-                            export KUBECONFIG=$KUBECONFIG_FILE
+                        sh """
+                            echo "🔧 Setting up kubeconfig..."
+                            export KUBECONFIG=${KUBECONFIG_FILE}
                             kubectl config get-contexts
-                        '''
+                        """
                     }
-                }
-                script {
-                    // Set the namespace based on the user who triggered the build
-                    def userId = currentBuild.getBuildCauses()
-                        .find { it._class.contains('UserIdCause') }?.userId ?: 'anonymous'
-                    env.NAMESPACE = "${userId}-${NAMESPACE}"
-                    echo "Using namespace: ${env.NAMESPACE}"
                 }
             }
         }
@@ -35,38 +34,42 @@ pipeline {
         stage('Verify Cluster Access') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
-                    sh '''
-                        export KUBECONFIG=$KUBECONFIG_FILE
-                        echo "Verifying access to Kubernetes cluster..."
-                        kubectl cluster-info
-                        kubectl get ns ${env.NAMESPACE}
-                    '''
+                    withEnv(["NAMESPACE=${env.NAMESPACE}"]) {
+                        sh '''
+                            export KUBECONFIG=$KUBECONFIG_FILE
+                            echo "🔍 Verifying access to Kubernetes cluster..."
+                            kubectl cluster-info
+                            kubectl get ns $NAMESPACE
+                        '''
+                    }
                 }
             }
         }
 
-        stage('Delete k8s') {
+        stage('Delete k8s Resources') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
-                    sh '''
-                        export KUBECONFIG=$KUBECONFIG_FILE
-                        echo "Deleting all in namespace ${env.NAMESPACE}..."
-                        kubectl delete all --all -n ${env.NAMESPACE} || echo "No thing found."
-                    '''
+                    withEnv(["NAMESPACE=${env.NAMESPACE}"]) {
+                        sh '''
+                            export KUBECONFIG=$KUBECONFIG_FILE
+                            echo "🧹 Deleting all in namespace $NAMESPACE..."
+                            kubectl delete all --all -n $NAMESPACE || echo "🟡 Nothing to delete."
+                        '''
+                    }
                 }
             }
         }
 
         stage('Cleanup Complete') {
             steps {
-                echo "Cleanup completed in namespace: ${env.NAMESPACE}"
+                echo "✅ Cleanup completed in namespace: ${env.NAMESPACE}"
             }
         }
     }
 
     post {
         failure {
-            echo "An error occurred during cleanup in namespace: ${env.NAMESPACE}"
+            echo "❌ An error occurred during cleanup in namespace: ${env.NAMESPACE}"
         }
     }
 }

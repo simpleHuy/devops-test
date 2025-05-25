@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_REGISTRY = "sciderus"
-        NAMESPACE = "dev-review"
+        NAMESPACE = "${params['prefix namespace']}-dev-review"
         DOMAIN_NAME = "${params['prefix namespace']}.devops"
     }
 

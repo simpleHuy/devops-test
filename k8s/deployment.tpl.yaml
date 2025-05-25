@@ -17,3 +17,12 @@ spec:
           image: sciderus/${SERVICE_NAME}:${IMAGE_TAG}
           ports:
             - containerPort: ${CONTAINER_PORT}
+          env:
+            - name: SPRING_BOOT_ADMIN_CLIENT_INSTANCE_PREFER_IP
+              value: false
+            - name: SPRING_BOOT_ADMIN_CLIENT_INSTANCE_SERVICE_HOST
+              value: ${CONTAINER_NAME}
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              value: false
+            - name: EUREKA_INSTANCE_HOSTNAME
+              value: ${CONTAINER_NAME}

@@ -14,18 +14,19 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     script{
-                        def userId = currentBuild.getBuildCauses()
-                        .find { it._class.contains('UserIdCause') }?.userId ?: 'anonymous'
-                        env.NAMESPACE = "${userId}-${NAMESPACE}"
-                        echo "Using namespace: ${env.NAMESPACE}"
+
                         sh '''
                             echo "Setting up kubeconfig..."
                             export KUBECONFIG=$KUBECONFIG_FILE
                             kubectl config get-contexts
                         '''
                     }
-                    
                 }
+
+                def userId = currentBuild.getBuildCauses()
+                .find { it._class.contains('UserIdCause') }?.userId ?: 'anonymous'
+                env.NAMESPACE = "${userId}-${NAMESPACE}"
+                echo "Using namespace: ${env.NAMESPACE}"
             }
         }
 

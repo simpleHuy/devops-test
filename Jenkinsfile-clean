@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        env.env.NAMESPACE = "dev-review"
+        NAMESPACE = "dev-review"
     }
 
     options {

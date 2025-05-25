@@ -10,7 +10,7 @@ pipeline {
     stages {
         stage('test minikube') {
             steps {
-                withCredentials([file(credentialsId: 'azure-cluster', variable: 'KUBECONFIG_FILE')]) {
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     script {
                         env.KUBECONFIG = "${KUBECONFIG_FILE}"
                         sh "kubectl get nodes"
@@ -21,7 +21,7 @@ pipeline {
 
         stage('Generate and Apply Kubernetes YAMLs') {
             steps {
-                withCredentials([file(credentialsId: 'azure-cluster', variable: 'KUBECONFIG_FILE')]) {
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     script {
                         env.KUBECONFIG = "${KUBECONFIG_FILE}"
 
@@ -76,7 +76,7 @@ pipeline {
 
         stage('Show Access Info') {
             steps {
-                withCredentials([file(credentialsId: 'azure-cluster', variable: 'KUBECONFIG')]) {
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
                     script {
                         def workerIP = sh(
                             script: "kubectl get nodes -o jsonpath='{.items[0].status.addresses[0].address}'",

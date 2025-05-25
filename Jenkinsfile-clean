@@ -1,31 +1,23 @@
 pipeline {
     agent any
 
-    environment {
-        NAMESPACE = "dev-review" // default, sẽ được ghi đè trong script
-    }
-
-    options {
-        timestamps()
-    }
-
     stages {
         stage('Initialize Kubeconfig and Namespace') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     script {
-                        // Lấy thông tin user trigger job
                         def userId = currentBuild.getBuildCauses()
                             .find { it._class.contains('UserIdCause') }?.userId ?: 'anonymous'
-                        // Gán lại namespace cho toàn pipeline
-                        env.NAMESPACE = "${userId}-dev-review"
-                        echo "✅ Using namespace: ${env.NAMESPACE}"
+                        def dynamicNamespace = "${userId}-dev-review"
+                        echo "Using namespace: ${dynamicNamespace}"
 
                         sh """
-                            echo "🔧 Setting up kubeconfig..."
+                            echo "Setting up kubeconfig..."
                             export KUBECONFIG=${KUBECONFIG_FILE}
                             kubectl config get-contexts
                         """
+
+                        env.NAMESPACE = dynamicNamespace
                     }
                 }
             }
@@ -34,13 +26,15 @@ pipeline {
         stage('Verify Cluster Access') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
-                    withEnv(["NAMESPACE=${env.NAMESPACE}"]) {
-                        sh '''
-                            export KUBECONFIG=$KUBECONFIG_FILE
-                            echo "🔍 Verifying access to Kubernetes cluster..."
-                            kubectl cluster-info
-                            kubectl get ns $NAMESPACE
-                        '''
+                    script {
+                        withEnv(["NAMESPACE=${env.NAMESPACE}"]) {
+                            sh '''
+                                export KUBECONFIG=$KUBECONFIG_FILE
+                                echo "Verifying access to Kubernetes cluster..."
+                                kubectl cluster-info
+                                kubectl get ns $NAMESPACE
+                            '''
+                        }
                     }
                 }
             }
@@ -49,12 +43,14 @@ pipeline {
         stage('Delete k8s Resources') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
-                    withEnv(["NAMESPACE=${env.NAMESPACE}"]) {
-                        sh '''
-                            export KUBECONFIG=$KUBECONFIG_FILE
-                            echo "🧹 Deleting all in namespace $NAMESPACE..."
-                            kubectl delete all --all -n $NAMESPACE || echo "🟡 Nothing to delete."
-                        '''
+                    script {
+                        withEnv(["NAMESPACE=${env.NAMESPACE}"]) {
+                            sh '''
+                                export KUBECONFIG=$KUBECONFIG_FILE
+                                echo "Deleting all in namespace $NAMESPACE..."
+                                kubectl delete all --all -n $NAMESPACE || echo "Nothing to delete."
+                            '''
+                        }
                     }
                 }
             }
@@ -62,14 +58,14 @@ pipeline {
 
         stage('Cleanup Complete') {
             steps {
-                echo "✅ Cleanup completed in namespace: ${env.NAMESPACE}"
+                echo "leanup completed in namespace: ${env.NAMESPACE}"
             }
         }
     }
 
     post {
         failure {
-            echo "❌ An error occurred during cleanup in namespace: ${env.NAMESPACE}"
+            echo "An error occurred during cleanup in namespace: ${env.NAMESPACE}"
         }
     }
 }

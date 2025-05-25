@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_REGISTRY = "sciderus"
-        NAMESPACE = "-dev-review"
+        NAMESPACE = "dev-review"
         DOMAIN_NAME = ".devops"
     }
 
@@ -64,7 +64,7 @@ pipeline {
                                 "CONTAINER_NAME=${CONTAINER_NAME}",
                                 "IMAGE_TAG=${IMAGE_TAG}",
                                 "CONTAINER_PORT=${CONTAINER_PORT}",
-                                "NAMESPACE=${env.NAMESPACE}"
+                                "NAMESPACE=${NAMESPACE}"
                             ]) {
                                 sh """
                                 envsubst < k8s/deployment.tpl.yaml > ${SERVICE_NAME}-deployment.yaml
@@ -105,7 +105,7 @@ pipeline {
                         services.each { svc ->
                             def svcName = svc.name
                             def nodePort = sh(
-                                script: "kubectl get svc ${svcName} -n ${namespace} -o jsonpath='{.spec.ports[0].nodePort}'",
+                                script: "kubectl get svc ${svcName} -n ${NAMESPACE} -o jsonpath='{.spec.ports[0].nodePort}'",
                                 returnStdout: true
                             ).trim()
 

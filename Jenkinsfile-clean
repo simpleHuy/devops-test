@@ -16,7 +16,7 @@ pipeline {
                     script{
                         def userId = currentBuild.getBuildCauses()
                         .find { it._class.contains('UserIdCause') }?.userId ?: 'anonymous'
-                        NAMESPACE = "${userId}-${NAMESPACE}"
+                        env.NAMESPACE = "${userId}-${NAMESPACE}"
                         sh '''
                         echo "Setting up kubeconfig..."
                         export KUBECONFIG=$KUBECONFIG_FILE
@@ -34,7 +34,7 @@ pipeline {
                         export KUBECONFIG=$KUBECONFIG_FILE
                         echo "Verifying access to Kubernetes cluster..."
                         kubectl cluster-info
-                        kubectl get ns $NAMESPACE
+                        kubectl get ns $env.NAMESPACE
                     '''
                 }
             }
@@ -45,8 +45,8 @@ pipeline {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
                         export KUBECONFIG=$KUBECONFIG_FILE
-                        echo "Deleting all in namespace $NAMESPACE..."
-                        kubectl delete all --all -n $NAMESPACE || echo "No thing found."
+                        echo "Deleting all in namespace $env.NAMESPACE..."
+                        kubectl delete all --all -n $env.NAMESPACE || echo "No thing found."
                     '''
                 }
             }

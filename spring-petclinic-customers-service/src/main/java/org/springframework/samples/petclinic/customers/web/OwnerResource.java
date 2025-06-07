@@ -58,6 +58,7 @@ class OwnerResource {
     @ResponseStatus(HttpStatus.CREATED)
     public Owner createOwner(@Valid @RequestBody OwnerRequest ownerRequest) {
         Owner owner = ownerEntityMapper.map(new Owner(), ownerRequest);
+        log.info("Saving owner {}", owner);
         return ownerRepository.save(owner);
     }
 

@@ -191,7 +191,7 @@ services:
     container_name: promtail
     volumes:
       - /etc/promtail/config.yaml:/etc/promtail/config.yaml
-      - /var/log:/var/log        # Chứa log thực tế từ host hoặc container
+      - /var/log:/var/log       
     command: -config.file=/etc/promtail/config.yaml
     depends_on:
       - loki

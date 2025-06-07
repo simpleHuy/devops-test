@@ -114,6 +114,10 @@
             <artifactId>datasource-micrometer-spring-boot</artifactId>
             <version>1.0.2</version>
         </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>context-propagation</artifactId>
+        </dependency>
 
         <!-- Testing -->
         <dependency>

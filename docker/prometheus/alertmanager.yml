@@ -1,0 +1,14 @@
+global:
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'scider@gmail.com'
+  smtp_auth_username: 'scider@gmail.com'
+  smtp_auth_password: 'lahh zksr zfsc rwjj '
+
+route:
+  receiver: 'email-notification'
+
+receivers:
+  - name: 'email-notification'
+    email_configs:
+      - to: 'scider@gmail.com'
+        send_resolved: true

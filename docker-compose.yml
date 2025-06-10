@@ -182,6 +182,8 @@ services:
   alertmanager:
     image: prom/alertmanager
     container_name: alertmanager
+    volumes:
+    - ./docker/prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml
     ports:
       - "9093:9093"
 

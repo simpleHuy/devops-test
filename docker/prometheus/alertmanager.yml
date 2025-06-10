@@ -1,14 +1,18 @@
 global:
   smtp_smarthost: 'smtp.gmail.com:587'
-  smtp_from: 'scider@gmail.com'
-  smtp_auth_username: 'scider@gmail.com'
-  smtp_auth_password: 'lahh zksr zfsc rwjj '
+  smtp_from: 'sciderus@gmail.com'
+  smtp_auth_username: 'sciderus@gmail.com'
+  smtp_auth_password: 'ygjrqcqgvnoukbys'
 
 route:
   receiver: 'email-notification'
+  group_wait: 0s
+  group_interval: 10s
+  repeat_interval: 1m
+  group_by: ['alertname']
 
 receivers:
   - name: 'email-notification'
     email_configs:
-      - to: 'scider@gmail.com'
+      - to: 'sciderus@gmail.com'
         send_resolved: true

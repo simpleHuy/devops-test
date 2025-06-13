@@ -2,6 +2,13 @@ package org.springframework.samples.petclinic.visits.config;
 
 import io.micrometer.core.aop.TimedAspect;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.config.MeterFilter;
+
+import java.util.Optional;
+
+import org.slf4j.MDC;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +24,13 @@ public class MetricConfig {
   @Bean
   TimedAspect timedAspect(MeterRegistry registry) {
     return new TimedAspect(registry);
+  }
+
+  @Bean
+  MeterFilter traceIdTaggingFilter() {
+      return MeterFilter.commonTags(
+          Tags.of(Tag.of("traceId", Optional.ofNullable(MDC.get("traceId")).orElse("unknown")))
+      );
   }
 
 }

@@ -1,44 +1,68 @@
 package org.springframework.samples.petclinic.customers.config;
 
 import io.micrometer.core.aop.TimedAspect;
+import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.config.MeterFilter;
 import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 
-import java.util.Optional;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 
 @Configuration
 public class MetricConfig {
+  
   @Bean
   TimedAspect timedAspect(MeterRegistry registry) {
     return new TimedAspect(registry);
   }
+  
   @Bean
-  MeterFilter traceIdTaggingFilter() {
-      return MeterFilter.commonTags(
-          Tags.of(Tag.of("traceId", Optional.ofNullable(MDC.get("traceId")).orElse("unknown")))
-      );
-  }
-  @Bean
+  @Order(1) // Make sure this runs before metrics are collected
   public Filter traceIdFilter() {
-      return (request, response, chain) -> {
-          // Extract trace ID from headers
-          String traceId = extractTraceIdFromHeaders((HttpServletRequest) request);
-          try {
-              // Set in MDC before processing
-              MDC.put("traceId", traceId);
-              chain.doFilter(request, response);
-          } finally {
-              MDC.remove("traceId");
-          }
-      };
+    return new Filter() {
+      @Override
+      public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) 
+          throws IOException, ServletException {
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        String traceId = extractTraceIdFromHeaders(httpRequest);
+        MDC.put("traceId", traceId);
+        try {
+          chain.doFilter(request, response);
+        } finally {
+          MDC.remove("traceId");
+        }
+      }
+    };
+  }
+
+  // This MeterFilter will be applied to each meter as it's registered
+  @Bean
+  public MeterFilter addTraceIdToMetrics() {
+    return new MeterFilter() {
+      @Override
+      public Meter.Id map(Meter.Id id) {
+        String traceId = MDC.get("traceId");
+        if (traceId != null && !traceId.isEmpty()) {
+          List<Tag> tags = new ArrayList<>(id.getTags());
+          tags.add(Tag.of("traceId", traceId));
+          return id.withTags(tags);
+        }
+        return id;
+      }
+    };
   }
 
   private String extractTraceIdFromHeaders(HttpServletRequest request) {

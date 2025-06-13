@@ -26,11 +26,3 @@ spec:
               value: "false"
             - name: EUREKA_INSTANCE_HOSTNAME
               value: ${CONTAINER_NAME}
-          volumeMounts:
-            - name: devops-logs
-              mountPath: /var/log/devops
-      volumes:
-        - name: devops-logs
-          hostPath:
-            path: /var/log/devops
-            type: DirectoryOrCreate

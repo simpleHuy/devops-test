@@ -1,0 +1,11 @@
+groups:
+  - name: high_error_rate
+    rules:
+      - alert: HighRequestErrorRate
+        expr: sum(increase(http_server_requests_seconds_count{status=~"5.."}[30s])) > 10
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          summary: "High request error rate"
+          description: "More than 10 HTTP 5xx errors in 30s"

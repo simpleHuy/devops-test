@@ -1,2 +1,4 @@
-FROM prom/prometheus:v2.4.2
+FROM prom/prometheus:v3.4.1
 ADD prometheus.yml /etc/prometheus/
+ADD alerting_rules.yml /etc/prometheus/
+ADD alertmanager.yml /etc/prometheus/

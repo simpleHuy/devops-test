@@ -15,22 +15,14 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class MetricConfig {
-
   @Bean
   MeterRegistryCustomizer<MeterRegistry> metricsCommonTags() {
-    return registry -> registry.config().commonTags("application", "petclinic");
+      return registry -> registry.config().commonTags("application", "petclinic");
   }
 
   @Bean
   TimedAspect timedAspect(MeterRegistry registry) {
     return new TimedAspect(registry);
   }
-
-  @Bean
-  public MeterFilter traceIdTaggingFilter() {
-    return MeterFilter.commonTags(
-        Tags.of(Tag.of("trace_id", Optional.ofNullable(MDC.get("trace_Id")).orElse("unknown")))
-    );
-  }
-
 }
+
